@@ -1,0 +1,6 @@
+*.elf
+*.rpx
+build/
+*.cbp
+*.layout
+*_syms.h
