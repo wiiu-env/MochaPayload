@@ -107,7 +107,7 @@ void kernel_launch_ios(u32 launch_address, u32 L, u32 C, u32 H)
 void kernel_run_patches(u32 ios_elf_start)
 {
     section_write(ios_elf_start, (u32)__KERNEL_CODE_START, __KERNEL_CODE_START, __KERNEL_CODE_END - __KERNEL_CODE_START);
-    //section_write_word(ios_elf_start, 0x0812A120, ARM_BL(0x0812A120, kernel_launch_ios));
+    section_write_word(ios_elf_start, 0x0812A120, ARM_BL(0x0812A120, kernel_launch_ios));
 
     section_write(ios_elf_start, 0x08140DE0, KERNEL_MCP_IOMAPPINGS_STRUCT, sizeof(KERNEL_MCP_IOMAPPINGS_STRUCT));
 
