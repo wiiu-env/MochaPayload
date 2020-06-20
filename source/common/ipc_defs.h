@@ -114,7 +114,7 @@ struct Permission {
     uint64_t mask;
 };
 
-typedef struct {
+typedef struct __attribute__((packed)) {
     uint32_t version;
     char unkn1[8];
     uint64_t titleId;
