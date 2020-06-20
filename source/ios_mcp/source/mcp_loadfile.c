@@ -21,6 +21,7 @@
 #include "../../common/ipc_defs.h"
 #include "fsa.h"
 #include "svc.h"
+#include "utils.h"
 #include <string.h>
 
 int (*const real_MCP_LoadFile)(ipcmessage *msg) = (void *) 0x0501CAA8 + 1; //+1 for thumb
@@ -62,10 +63,8 @@ int _MCP_LoadFile_patch(ipcmessage *msg) {
     int replace_fileoffset = rep_fileoffset;
     char *replace_path = rpxpath;
 
-    skipPPCSetup = true;
-
     if (strncmp(request->name, "men.rpx", strlen("men.rpx")) == 0) {
-        //replace_path = "wiiu/root.rpx";
+        replace_path = "wiiu/root.rpx";
         if (skipPPCSetup) {
             replace_path = "wiiu/men.rpx";
         }
@@ -89,7 +88,7 @@ int _MCP_LoadFile_patch(ipcmessage *msg) {
             didrpxfirstchunk = false;
         }
 
-        // if we don't explicitly replace files, we do want replace the Healt and Safety app with the HBL
+        // if we don't explicitly replace files, we do want replace the Health and Safety app with the HBL
         if (!doWantReplaceRPX) {
             replace_path = "wiiu/apps/homebrew_launcher/homebrew_launcher.rpx";
             replace_target = LOAD_FILE_TARGET_SD_CARD;
@@ -125,8 +124,6 @@ static int MCP_LoadCustomFile(int target, char *path, int filesize, int fileoffs
     if (path == NULL) {
         return 0;
     }
-
-
     char filepath[256];
     memset(filepath, 0, sizeof(filepath));
     strncpy(filepath, path, sizeof(filepath) - 1);
@@ -153,7 +150,6 @@ static int MCP_LoadCustomFile(int target, char *path, int filesize, int fileoffs
     int result = MCP_DoLoadFile(filepath, NULL, buffer_out, buffer_len, pos + fileoffset, &bytesRead, 0);
     //log("MCP_DoLoadFile returned %d, bytesRead = %d pos %d \n", result, bytesRead, pos + fileoffset);
 
-
     if (result >= 0) {
         if (!bytesRead) {
             return 0;
@@ -168,6 +164,43 @@ static int MCP_LoadCustomFile(int target, char *path, int filesize, int fileoffs
     return result;
 }
 
+int _MCP_ReadCOSXml_patch(uint32_t u1, uint32_t u2, MCPPPrepareTitleInfo *xmlData) {
+    int (*const real_MCP_ReadCOSXml_patch)(uint32_t u1, uint32_t u2, MCPPPrepareTitleInfo *xmlData) = (void *) 0x050024ec + 1; //+1 for thumb
+
+    int res = real_MCP_ReadCOSXml_patch(u1, u2, xmlData);
+
+
+    if (!skipPPCSetup) {
+        if (xmlData->titleId == 0x0005001010040000 ||
+            xmlData->titleId == 0x0005001010040100 ||
+            xmlData->titleId == 0x0005001010040200) {
+
+            xmlData->codegen_size = 0x02000000;
+            xmlData->codegen_core = 0x80000001;
+            xmlData->max_codesize = 0x02800000;
+            /*
+            xmlData->max_size = 0x40000000;
+            xmlData->max_codesize = 0x00800000;
+            xmlData->avail_size = 0;
+            xmlData->overlay_arena = 0;
+            for (uint32_t i = 0; i < 19; i++) {
+                xmlData->permissions[i].mask = 0xFFFFFFFFFFFFFFFF;
+            }
+            xmlData->default_stack0_size = 0;
+            xmlData->default_stack1_size = 0;
+            xmlData->default_stack2_size = 0;
+            xmlData->default_redzone0_size = 0;
+            xmlData->default_redzone1_size = 0;
+            xmlData->default_redzone2_size = 0;
+            xmlData->exception_stack0_size = 0x00001000;
+            xmlData->exception_stack1_size = 0x00001000;
+            xmlData->exception_stack2_size = 0x00001000;
+            */
+        }
+    }
+
+    return res;
+}
 
 /*  RPX replacement! Call this ioctl to replace the next loaded RPX with an arbitrary path.
     DO NOT RETURN 0, this affects the codepaths back in the IOSU code */

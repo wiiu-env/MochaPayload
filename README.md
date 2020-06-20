@@ -3,7 +3,7 @@ This a lite version of the [original mocha](https://github.com/dimok789/mocha) t
 
 ## Usage
 Place the `00_mocha.rpx` in the `sd:/wiiu/modules/setup` folder and run the [SetupPayload](https://github.com/wiiu-env/SetupPayload).
-
+Requires [PayloadFromRPX](https://github.com/wiiu-env/PayloadFromRPX) as `sd:/wiiu/root.rpx` to support returning from the system settings.
 
 ## Patches
 - You can also place a RPX as `men.rpx` in the `sd:/wiiu` folder which will replace the Wii U Menu.

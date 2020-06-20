@@ -51,6 +51,9 @@ void mcp_run_patches(u32 ios_elf_start) {
     section_write_word(ios_elf_start, 0x050254D6, THUMB_BL(0x050254D6, MCP_LoadFile_patch));
     section_write_word(ios_elf_start, 0x05025242, THUMB_BL(0x05025242, MCP_ioctl100_patch));
 
+    section_write_word(ios_elf_start, 0x0501dd78, THUMB_BL(0x0501dd78, MCP_ReadCOSXml_patch));
+    section_write_word(ios_elf_start, 0x051105ce, THUMB_BL(0x051105ce, MCP_ReadCOSXml_patch));
+
     // change system.xml to syshax.xml
     section_write_word(ios_elf_start, 0x050600F0, 0x79736861); // ysha
     section_write_word(ios_elf_start, 0x050600F4, 0x782E786D); // x.xm

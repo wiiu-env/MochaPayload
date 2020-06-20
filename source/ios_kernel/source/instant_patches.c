@@ -71,6 +71,9 @@ void instant_patches_setup(void) {
     *(volatile u32 *) (0x050254D6 - 0x05000000 + 0x081C0000) = (volatile u32 *) THUMB_BL(0x050254D6, MCP_LoadFile_patch);
     *(volatile u32 *) (0x05025242 - 0x05000000 + 0x081C0000) = (volatile u32 *) THUMB_BL(0x05025242, MCP_ioctl100_patch);
 
+    *(volatile u32 *) (0x0501dd78 - 0x05000000 + 0x081C0000) = (volatile u32 *) THUMB_BL(0x0501dd78, MCP_ReadCOSXml_patch);
+    *(volatile u32 *) (0x051105ce - 0x05000000 + 0x081C0000) = (volatile u32 *) THUMB_BL(0x051105ce, MCP_ReadCOSXml_patch);
+
     // change system.xml to syshax.xml
     /*
     *(volatile u32*)mcp_rodata_phys(0x050600F0) = 0x79736861; // ysha
