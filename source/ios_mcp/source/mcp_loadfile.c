@@ -26,8 +26,6 @@
 int (*const real_MCP_LoadFile)(ipcmessage *msg) = (void *) 0x0501CAA8 + 1; //+1 for thumb
 int (*const MCP_DoLoadFile)(const char *path, const char *path2, void *outputBuffer, uint32_t outLength, uint32_t pos, int *bytesRead, uint32_t unk) = (void *) 0x05017248 + 1;
 
-int (*const MCP_UnknownStuff)(const char *path, uint32_t pos, void *outputBuffer, uint32_t outLength, uint32_t outLength2, uint32_t unk) = (void *) 0x05014CAC + 1;
-
 static int MCP_LoadCustomFile(int target, char *path, int filesize, int fileoffset, void *out_buffer, int buffer_len, int pos);
 
 static bool skipPPCSetup = false;
@@ -160,11 +158,6 @@ static int MCP_LoadCustomFile(int target, char *path, int filesize, int fileoffs
         if (!bytesRead) {
             return 0;
         }
-
-        /*  TODO: If this fails, try last argument as 1 */
-        result = MCP_UnknownStuff(filepath, pos + fileoffset, buffer_out, buffer_len, buffer_len, 0);
-        //log("MCP_UnknownStuff returned %d\n", result);
-
         if (result >= 0) {
             if (filesize > 0 && (bytesRead + pos > filesize)) {
                 return filesize - pos;
