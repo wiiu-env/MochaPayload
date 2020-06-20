@@ -4,3 +4,6 @@ build/
 *.cbp
 *.layout
 *_syms.h
+cmake-build-debug/
+.idea/
+CMakeLists.txt
