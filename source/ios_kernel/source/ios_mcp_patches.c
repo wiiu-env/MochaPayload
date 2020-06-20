@@ -32,27 +32,25 @@
 extern const patch_table_t mcp_patches_table[];
 extern const patch_table_t mcp_patches_table_end[];
 
-u32 mcp_get_phys_code_base(void)
-{
+u32 mcp_get_phys_code_base(void) {
     return _text_start + MCP_CODE_BASE_PHYS_ADDR;
 }
 
-void mcp_run_patches(u32 ios_elf_start)
-{
+void mcp_run_patches(u32 ios_elf_start) {
     // write ios_mcp code and bss
     section_write_bss(ios_elf_start, _bss_start, _bss_end - _bss_start);
-    section_write(ios_elf_start, _text_start, (void*)mcp_get_phys_code_base(), _text_end - _text_start);
+    section_write(ios_elf_start, _text_start, (void *) mcp_get_phys_code_base(), _text_end - _text_start);
 
     section_write_word(ios_elf_start, 0x05056718, ARM_BL(0x05056718, _text_start));
-    
+
     section_write_word(ios_elf_start, 0x05002BBE, THUMB_BL(0x05002BBE, patch_SD_access_check));
 
-    u32 patch_count = (u32)(((u8*)mcp_patches_table_end) - ((u8*)mcp_patches_table)) / sizeof(patch_table_t);
+    u32 patch_count = (u32) (((u8 *) mcp_patches_table_end) - ((u8 *) mcp_patches_table)) / sizeof(patch_table_t);
     patch_table_entries(ios_elf_start, mcp_patches_table, patch_count);
 
     section_write_word(ios_elf_start, 0x050254D6, THUMB_BL(0x050254D6, MCP_LoadFile_patch));
     section_write_word(ios_elf_start, 0x05025242, THUMB_BL(0x05025242, MCP_ioctl100_patch));
-    
+
     // change system.xml to syshax.xml
     section_write_word(ios_elf_start, 0x050600F0, 0x79736861); // ysha
     section_write_word(ios_elf_start, 0x050600F4, 0x782E786D); // x.xm

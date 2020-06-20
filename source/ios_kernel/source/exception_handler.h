@@ -26,18 +26,15 @@
 
 void crash_handler(unsigned int *context, int type);
 
-static inline void crash_handler_prefetch(unsigned int *context, int unused1, int unused2)
-{
+static inline void crash_handler_prefetch(unsigned int *context, int unused1, int unused2) {
     crash_handler(context, 0);
 }
 
-static inline void crash_handler_data(unsigned int *context, int unused1, int unused2)
-{
+static inline void crash_handler_data(unsigned int *context, int unused1, int unused2) {
     crash_handler(context, 1);
 }
 
-static inline void crash_handler_undef_instr(unsigned int *context, int unused1, int unused2)
-{
+static inline void crash_handler_undef_instr(unsigned int *context, int unused1, int unused2) {
     crash_handler(context, 2);
 }
 

@@ -15,8 +15,8 @@ int main(int argc, char **argv) {
     WHBLogUdpInit();
     WHBLogPrintf("Hello from mocha");
     unsigned long long sysmenuIdUll = _SYSGetSystemApplicationTitleId(0);
-    memcpy((void*)0xF417FFF0, &sysmenuIdUll, 8);
-    DCStoreRange((void*)0xF417FFF0,0x8);
+    memcpy((void *) 0xF417FFF0, &sysmenuIdUll, 8);
+    DCStoreRange((void *) 0xF417FFF0, 0x8);
 
     ExecuteIOSExploit();
     WHBLogPrintf("Bye from mocha");

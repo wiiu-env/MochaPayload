@@ -4,8 +4,9 @@
 #include "types.h"
 
 int ifmgrnclInit();
+
 int ifmgrnclExit();
 
-int	IFMGRNCL_GetInterfaceStatus(u16 interface_id, u16* out_status);
+int IFMGRNCL_GetInterfaceStatus(u16 interface_id, u16 *out_status);
 
 #endif

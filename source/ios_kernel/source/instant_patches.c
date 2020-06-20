@@ -43,34 +43,34 @@ typedef struct {
 
 void instant_patches_setup(void) {
     // apply IOS ELF launch hook
-    *(volatile u32*)0x0812A120 = ARM_BL(0x0812A120, kernel_launch_ios);
+    *(volatile u32 *) 0x0812A120 = ARM_BL(0x0812A120, kernel_launch_ios);
 
     // patch FSA raw access
-    *(volatile u32*)0x1070FAE8 = 0x05812070;
-    *(volatile u32*)0x1070FAEC = 0xEAFFFFF9;
+    *(volatile u32 *) 0x1070FAE8 = 0x05812070;
+    *(volatile u32 *) 0x1070FAEC = 0xEAFFFFF9;
 
-    int (*_iosMapSharedUserExecution)(void *descr) = (void*)0x08124F88;
+    int (*_iosMapSharedUserExecution)(void *descr) = (void *) 0x08124F88;
 
     // patch kernel dev node registration
-    *(volatile u32*)0x081430B4 = 1;
+    *(volatile u32 *) 0x081430B4 = 1;
 
     // fix 10 minute timeout that crashes MCP after 10 minutes of booting
-    *(volatile u32*)(0x05022474 - 0x05000000 + 0x081C0000) = 0xFFFFFFFF;    // NEW_TIMEOUT
+    *(volatile u32 *) (0x05022474 - 0x05000000 + 0x081C0000) = 0xFFFFFFFF;    // NEW_TIMEOUT
 
     // start our MCP thread directly on first title change
-    kernel_memset((void*)(0x050BD000 - 0x05000000 + 0x081C0000), 0, 0x3000);
-    *(volatile u32*)(0x05054D6C - 0x05000000 + 0x081C0000) = ARM_B(0x05054D6C, _startMainThread);
+    kernel_memset((void *) (0x050BD000 - 0x05000000 + 0x081C0000), 0, 0x3000);
+    *(volatile u32 *) (0x05054D6C - 0x05000000 + 0x081C0000) = ARM_B(0x05054D6C, _startMainThread);
 
     // allow custom bootLogoTex and bootMovie.h264
-    *(volatile u32*)(0xE0030D68 - 0xE0000000 + 0x12900000) = 0xE3A00000;    // mov r0, #0
-    *(volatile u32*)(0xE0030D34 - 0xE0000000 + 0x12900000) = 0xE3A00000;    // mov r0, #0
+    *(volatile u32 *) (0xE0030D68 - 0xE0000000 + 0x12900000) = 0xE3A00000;    // mov r0, #0
+    *(volatile u32 *) (0xE0030D34 - 0xE0000000 + 0x12900000) = 0xE3A00000;    // mov r0, #0
 
     // allow any region title launch
-    *(volatile u32*)(0xE0030498 - 0xE0000000 + 0x12900000) = 0xE3A00000;    // mov r0, #0
+    *(volatile u32 *) (0xE0030498 - 0xE0000000 + 0x12900000) = 0xE3A00000;    // mov r0, #0
 
-    *(volatile u32*)(0x050254D6 - 0x05000000 + 0x081C0000) = (volatile u32*)THUMB_BL(0x050254D6, MCP_LoadFile_patch);
-    *(volatile u32*)(0x05025242 - 0x05000000 + 0x081C0000) = (volatile u32*)THUMB_BL(0x05025242, MCP_ioctl100_patch);
-    
+    *(volatile u32 *) (0x050254D6 - 0x05000000 + 0x081C0000) = (volatile u32 *) THUMB_BL(0x050254D6, MCP_LoadFile_patch);
+    *(volatile u32 *) (0x05025242 - 0x05000000 + 0x081C0000) = (volatile u32 *) THUMB_BL(0x05025242, MCP_ioctl100_patch);
+
     // change system.xml to syshax.xml
     /*
     *(volatile u32*)mcp_rodata_phys(0x050600F0) = 0x79736861; // ysha
@@ -79,21 +79,21 @@ void instant_patches_setup(void) {
     *(volatile u32*)mcp_rodata_phys(0x05060114) = 0x79736861; // ysha
     *(volatile u32*)mcp_rodata_phys(0x05060118) = 0x782E786D; // x.xm
     */
-    
-        // patch default title id to system menu
-    *(volatile u32*)mcp_data_phys(0x050B817C) = *(volatile u32*)0x0017FFF0;
-    *(volatile u32*)mcp_data_phys(0x050B8180) = *(volatile u32*)0x0017FFF4;
+
+    // patch default title id to system menu
+    *(volatile u32 *) mcp_data_phys(0x050B817C) = *(volatile u32 *) 0x0017FFF0;
+    *(volatile u32 *) mcp_data_phys(0x050B8180) = *(volatile u32 *) 0x0017FFF4;
 
     // force check USB storage on load
-    *(volatile u32*)acp_phys(0xE012202C) = 0x00000001; // find USB flag
+    *(volatile u32 *) acp_phys(0xE012202C) = 0x00000001; // find USB flag
 
     // set zero to start thread directly on first title change
-    *(volatile u32*)(0x050BC580 - 0x05000000 + 0x081C0000) = 0;
+    *(volatile u32 *) (0x050BC580 - 0x05000000 + 0x081C0000) = 0;
     // down display launch image at this state
-    *(volatile u32*)(_text_start - 4 - 0x05100000 + 0x13D80000) = 0;
-    
+    *(volatile u32 *) (_text_start - 4 - 0x05100000 + 0x13D80000) = 0;
+
     // patch the read position for the cos xml's p4.mask(ios_fs) to read 0xFFFFFFFFFFFFFFFF
-    *(volatile u32*)(0x05002BBE - 0x05000000 + 0x081C0000) = (volatile u32*)THUMB_BL(0x05002BBE, patch_SD_access_check);
+    *(volatile u32 *) (0x05002BBE - 0x05000000 + 0x081C0000) = (volatile u32 *) THUMB_BL(0x05002BBE, patch_SD_access_check);
 
     ios_map_shared_info_t map_info;
     map_info.paddr = 0x050BD000 - 0x05000000 + 0x081C0000;

@@ -37,20 +37,19 @@
 #define NAND_DESC_TYPE_SEEPROM              0x45455052 // 'EEPR'
 #define NAND_DESC_TYPE_OTP                  0x4f545020 // 'OTP '
 
-typedef struct _stdio_nand_desc_t
-{
+typedef struct _stdio_nand_desc_t {
     u32 nand_type;                          // nand type
     u32 base_sector;                        // base sector of dump
     u32 sector_count;                       // sector count in SDIO sectors
-} __attribute__((packed))stdio_nand_desc_t;
+} __attribute__((packed)) stdio_nand_desc_t;
 
-typedef struct _sdio_nand_signature_sector_t
-{
+typedef struct _sdio_nand_signature_sector_t {
     u64 signature;              // HAXXDUMP
     stdio_nand_desc_t nand_descriptions[NAND_MAX_DESC_TYPES];
 } __attribute__((packed)) sdio_nand_signature_sector_t;
 
 int FSA_SDReadRawSectors(void *buffer, u32 sector, u32 num_sectors);
+
 int FSA_SDWriteRawSectors(const void *buffer, u32 sector, u32 num_sectors);
 
 #endif

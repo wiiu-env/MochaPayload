@@ -21,63 +21,56 @@
 
 
 /* IPC message */
-typedef struct ipcmessage
-{
-	u32 command;
-	u32 result;
-	u32 fd;
-	u32 flags;
-	u32 client_cpu;
-	u32 client_pid;
-	u64 client_gid;
-	u32 server_handle;
+typedef struct ipcmessage {
+    u32 command;
+    u32 result;
+    u32 fd;
+    u32 flags;
+    u32 client_cpu;
+    u32 client_pid;
+    u64 client_gid;
+    u32 server_handle;
 
-	union
-	{
-	    u32 args[5];
+    union {
+        u32 args[5];
 
-		struct
-		{
-			char *device;
-			u32   mode;
-			u32   resultfd;
-		} open;
+        struct {
+            char *device;
+            u32 mode;
+            u32 resultfd;
+        } open;
 
-		struct
-		{
-			void *data;
-			u32   length;
-		} read, write;
+        struct {
+            void *data;
+            u32 length;
+        } read, write;
 
-		struct
-		{
-			s32 offset;
-			s32 origin;
-		} seek;
+        struct {
+            s32 offset;
+            s32 origin;
+        } seek;
 
-		struct
-		{
-			u32 command;
+        struct {
+            u32 command;
 
-			u32 *buffer_in;
-			u32  length_in;
-			u32 *buffer_io;
-			u32  length_io;
-		} ioctl;
-		struct _ioctlv
-		{
-			u32 command;
+            u32 *buffer_in;
+            u32 length_in;
+            u32 *buffer_io;
+            u32 length_io;
+        } ioctl;
+        struct _ioctlv {
+            u32 command;
 
-			u32 num_in;
-			u32 num_io;
-			struct _ioctlv *vector;
-		} ioctlv;
-	};
+            u32 num_in;
+            u32 num_io;
+            struct _ioctlv *vector;
+        } ioctlv;
+    };
 
-	u32 prev_command;
-	u32 prev_fd;
-	u32 virt0;
-	u32 virt1;
+    u32 prev_command;
+    u32 prev_fd;
+    u32 virt0;
+    u32 virt1;
 } __attribute__((packed)) ipcmessage;
 
 #endif

@@ -25,7 +25,9 @@
 #define _KERNEL_PATCHES_H
 
 int kernel_init_otp_buffer(u32 sd_sector, int tagValid);
+
 void kernel_launch_ios(u32 launch_address, u32 L, u32 C, u32 H);
+
 void kernel_run_patches(u32 ios_elf_start);
 
 #endif

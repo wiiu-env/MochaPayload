@@ -33,24 +33,21 @@
 #define enable_interrupts           ((int(*)(int))0x0812E78C)
 #define kernel_bsp_command_5        ((int (*)(const char*, int offset, const char*, int size, void *buffer))0x0812EC40)
 
-void reverse_memcpy(void* dest, const void* src, unsigned int size);
+void reverse_memcpy(void *dest, const void *src, unsigned int size);
 
-static inline unsigned int disable_mmu(void)
-{
-	unsigned int control_register = 0;
-	asm volatile("MRC p15, 0, %0, c1, c0, 0" : "=r" (control_register));
-	asm volatile("MCR p15, 0, %0, c1, c0, 0" : : "r" (control_register & 0xFFFFEFFA));
-	return control_register;
+static inline unsigned int disable_mmu(void) {
+    unsigned int control_register = 0;
+    asm volatile("MRC p15, 0, %0, c1, c0, 0" : "=r" (control_register));
+    asm volatile("MCR p15, 0, %0, c1, c0, 0" : : "r" (control_register & 0xFFFFEFFA));
+    return control_register;
 }
 
-static inline void restore_mmu(unsigned int control_register)
-{
-	asm volatile("MCR p15, 0, %0, c1, c0, 0" : : "r" (control_register));
+static inline void restore_mmu(unsigned int control_register) {
+    asm volatile("MCR p15, 0, %0, c1, c0, 0" : : "r" (control_register));
 }
 
-static inline void set_domain_register(unsigned int domain_register)
-{
-	asm volatile("MCR p15, 0, %0, c3, c0, 0" : : "r" (domain_register));
+static inline void set_domain_register(unsigned int domain_register) {
+    asm volatile("MCR p15, 0, %0, c3, c0, 0" : : "r" (domain_register));
 }
 
 #endif

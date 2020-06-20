@@ -27,6 +27,7 @@
 #define MCP_LAUNCH_IMG_PHYS_ADDR    (0x27000000)
 
 u32 mcp_get_phys_code_base(void);
+
 void mcp_run_patches(u32 ios_elf_start);
 
 #endif

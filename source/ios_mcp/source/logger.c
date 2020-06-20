@@ -9,24 +9,24 @@
 static int log_socket = 0;
 
 int log_init(unsigned int ipAddress){
-	log_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	if (log_socket < 0){
-		return log_socket;
+    log_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (log_socket < 0){
+        return log_socket;
     }
 
-	struct sockaddr_in connect_addr;
-	memset(&connect_addr, 0, sizeof(connect_addr));
-	connect_addr.sin_family = AF_INET;
-	connect_addr.sin_port = 4405;
-	connect_addr.sin_addr.s_addr = ipAddress;
+    struct sockaddr_in connect_addr;
+    memset(&connect_addr, 0, sizeof(connect_addr));
+    connect_addr.sin_family = AF_INET;
+    connect_addr.sin_port = 4405;
+    connect_addr.sin_addr.s_addr = ipAddress;
 
-	if(connect(log_socket, (struct sockaddr*)&connect_addr, sizeof(connect_addr)) < 0)
-	{
-	    closesocket(log_socket);
-	    log_socket = -1;
-	}
+    if(connect(log_socket, (struct sockaddr*)&connect_addr, sizeof(connect_addr)) < 0)
+    {
+        closesocket(log_socket);
+        log_socket = -1;
+    }
 
-	return log_socket;
+    return log_socket;
 }
 
 void log_deinit()
