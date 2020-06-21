@@ -30,7 +30,6 @@ int (*const MCP_DoLoadFile)(const char *path, const char *path2, void *outputBuf
 static int MCP_LoadCustomFile(int target, char *path, int filesize, int fileoffset, void *out_buffer, int buffer_len, int pos);
 
 static bool skipPPCSetup = false;
-static bool didrpxfirstchunk = false;
 static bool doWantReplaceRPX = false;
 static bool replace_target_device = 0;
 static uint32_t rep_filesize = 0;
@@ -73,23 +72,11 @@ int _MCP_LoadFile_patch(ipcmessage *msg) {
         // The men.rpx is hooked until the "IPC_CUSTOM_MEN_RPX_HOOK_COMPLETED" command is passed to IOCTL 0x100.
         // If the loading of the replacement file fails, the Wii U Menu is loaded normally.
         replace_target = LOAD_FILE_TARGET_SD_CARD;
-
-
-        int result = MCP_LoadCustomFile(replace_target, replace_path, 0, 0, msg->ioctl.buffer_io, msg->ioctl.length_io, request->pos);
-
-        if (result >= 0) {
-            return result;
-        } else {
-            // on error don't try it again.
-            skipPPCSetup = true;
-        }
+        replace_filesize = 0; // unknown
+        replace_fileoffset = 0;
     } else if (strncmp(request->name, "safe.rpx", strlen("safe.rpx")) == 0) {
-        if (request->pos == 0) {
-            didrpxfirstchunk = false;
-        }
-
         // if we don't explicitly replace files, we do want replace the Health and Safety app with the HBL
-        if (!doWantReplaceRPX) {
+        if (request->pos == 0 && !doWantReplaceRPX) {
             replace_path = "wiiu/apps/homebrew_launcher/homebrew_launcher.rpx";
             replace_target = LOAD_FILE_TARGET_SD_CARD;
             //doWantReplaceXML = false;
@@ -97,22 +84,20 @@ int _MCP_LoadFile_patch(ipcmessage *msg) {
             replace_filesize = 0; // unknown
             replace_fileoffset = 0;
         }
+    }else{
+        doWantReplaceRPX = false; // Only replace it once.
+        replace_path = NULL;
+        return real_MCP_LoadFile(msg);
     }
 
     if (replace_path != NULL && strlen(replace_path) > 0) {
-        if (!didrpxfirstchunk || request->pos > 0) {
-            doWantReplaceRPX = false; // Only replace it once.
-            int result = MCP_LoadCustomFile(replace_target, replace_path, replace_filesize, replace_fileoffset, msg->ioctl.buffer_io, msg->ioctl.length_io, request->pos);
+        doWantReplaceRPX = false; // Only replace it once.
+        int result = MCP_LoadCustomFile(replace_target, replace_path, replace_filesize, replace_fileoffset, msg->ioctl.buffer_io, msg->ioctl.length_io, request->pos);
 
-            if (result >= 0) {
-                if (request->pos == 0) {
-                    didrpxfirstchunk = true;
-                }
-                return result;
-            } else {
-                // TODO, what happens if we already replaced the app/cos xml files and then the loading fails?
-            }
+        if (result >= 0) {
+            return result;
         }
+
     }
 
     return real_MCP_LoadFile(msg);
@@ -271,7 +256,6 @@ int _MCP_ioctl100_patch(ipcmessage *msg) {
 
                     rep_filesize = filesize;
                     rep_fileoffset = fileoffset;
-                    didrpxfirstchunk = false;
                     doWantReplaceRPX = true;
                     //doWantReplaceXML = true;
 
