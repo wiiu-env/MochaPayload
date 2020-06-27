@@ -95,16 +95,19 @@ export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 #-------------------------------------------------------------------------------
 $(BUILD): $(CURDIR)/source/ios_kernel/ios_kernel.bin.h
 	@[ -d $@ ] || mkdir -p $@
-	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
+	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_mcp -f $(CURDIR)/source/ios_mcp/Makefile
+	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_usb -f $(CURDIR)/source/ios_usb/Makefile    
+	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_kernel -f $(CURDIR)/source/ios_kernel/Makefile
+	@$(MAKE) -j1 --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
 $(CURDIR)/source/ios_kernel/ios_kernel.bin.h: $(CURDIR)/source/ios_usb/ios_usb.bin.h  $(CURDIR)/source/ios_mcp/ios_mcp.bin.h
-	@$(MAKE) --no-print-directory -C $(CURDIR)/source/ios_kernel -f $(CURDIR)/source/ios_kernel/Makefile
+	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_kernel -f $(CURDIR)/source/ios_kernel/Makefile
 
 $(CURDIR)/source/ios_usb/ios_usb.bin.h: 
-	@$(MAKE) --no-print-directory -C $(CURDIR)/source/ios_usb -f $(CURDIR)/source/ios_usb/Makefile
+	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_usb -f $(CURDIR)/source/ios_usb/Makefile
     
 $(CURDIR)/source/ios_mcp/ios_mcp.bin.h: 
-	@$(MAKE) --no-print-directory -C $(CURDIR)/source/ios_mcp -f $(CURDIR)/source/ios_mcp/Makefile
+	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_mcp -f $(CURDIR)/source/ios_mcp/Makefile
 #-------------------------------------------------------------------------------
 clean:
 	@echo clean ...
