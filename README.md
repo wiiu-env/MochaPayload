@@ -16,6 +16,24 @@ Requires [PayloadFromRPX](https://github.com/wiiu-env/PayloadFromRPX) as `sd:/wi
 
 For building you just need [wut](https://github.com/devkitPro/wut/) installed, then use the `make` command.
 
+
+## Building using the Dockerfile
+
+It's possible to use a docker image for building. This way you don't need anything installed on your host system.
+
+```
+# Build docker image (only needed once)
+docker build . -t mochapayload-builder
+
+# make 
+docker run -it --rm -v ${PWD}:/project mochapayload-builder make
+
+# make clean
+docker run -it --rm -v ${PWD}:/project mochapayload-builder make clean
+```
+
+
+
 ## Credits
 dimok
 Maschell
