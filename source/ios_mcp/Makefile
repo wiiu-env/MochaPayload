@@ -32,6 +32,12 @@ PROJECTNAME = ${shell basename "$(CURDIR)"}
 CWD = "$(CURDIR)""
 
 #---------------------------------------------------------------------------------
+# path to tools
+#---------------------------------------------------------------------------------
+DEVKITPATH=$(shell echo "$(DEVKITPRO)" | sed -e 's/^\([a-zA-Z]\):/\/\1/')
+export PATH	:=	$(DEVKITPATH)/tools/bin:$(DEVKITPATH)/devkitPPC/bin:$(PATH)
+
+#---------------------------------------------------------------------------------
 # canned command sequence for binary data, taken from devkitARM
 #---------------------------------------------------------------------------------
 define bin2o
@@ -54,7 +60,8 @@ $(PROJECTNAME).bin: $(PROJECTNAME).elf
 	@$(OBJCOPY) -j .text -j .rodata -j .data -O binary $(PROJECTNAME).elf $@
 	
 $(PROJECTNAME).bin.h: $(PROJECTNAME).bin
-	@xxd -i $< | sed "s/unsigned/static const unsigned/g;s/$(PROJECTNAME)$*/$(PROJECTNAME)/g" > $@
+	@raw2c $<
+	@cp $(PROJECTNAME).c $@
 	
 $(PROJECTNAME)_syms.h:
 	@echo "#ifndef $(PROJECTNAME)_SYMS_H" > $@
@@ -65,7 +72,7 @@ $(PROJECTNAME)_syms.h:
 
 clean:
 	@rm -f build/*.o build/*.d
-	@rm -f $(PROJECTNAME).elf $(PROJECTNAME).bin $(PROJECTNAME)_syms.h $(PROJECTNAME).bin $(PROJECTNAME).bin.h
+	@rm -f $(PROJECTNAME).elf $(PROJECTNAME).bin $(PROJECTNAME)_syms.h $(PROJECTNAME).bin $(PROJECTNAME).bin.h  $(PROJECTNAME).c  $(PROJECTNAME).h
 	@echo "all cleaned up !"
 
 -include $(DFILES)

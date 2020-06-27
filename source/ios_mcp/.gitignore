@@ -1,4 +1,6 @@
 build/
 *.bin
 *.bin.h
+ios_mcp.c
+ios_mcp.h
 *.elf

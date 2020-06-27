@@ -1,4 +1,6 @@
 build/
 *.bin
 *.bin.h
+ios_kernel.c
+ios_kernel.h
 *.elf
