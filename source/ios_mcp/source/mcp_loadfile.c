@@ -29,6 +29,7 @@ int (*const MCP_DoLoadFile)(const char *path, const char *path2, void *outputBuf
 
 static int MCP_LoadCustomFile(int target, char *path, int filesize, int fileoffset, void *out_buffer, int buffer_len, int pos);
 
+static bool replace_valid = false;
 static bool skipPPCSetup = false;
 static bool doWantReplaceRPX = false;
 static bool replace_target_device = 0;
@@ -62,6 +63,17 @@ int _MCP_LoadFile_patch(ipcmessage *msg) {
     int replace_fileoffset = rep_fileoffset;
     char *replace_path = rpxpath;
 
+    if(strlen(request->name) > 1 && request->name[strlen(request->name)-1] == 'x'){
+        if (strncmp(request->name, "safe.rpx", strlen("safe.rpx")) != 0) {
+            //DEBUG_FUNCTION_LINE("set replace_valid to false\n");
+            replace_valid = false;
+        }else if(request->pos == 0){
+            if(replace_valid){
+                //DEBUG_FUNCTION_LINE("set doWantReplaceRPX to true\n");
+                doWantReplaceRPX = true;
+            }
+        }
+    }
     if (strncmp(request->name, "men.rpx", strlen("men.rpx")) == 0) {
         replace_path = "wiiu/root.rpx";
         if (skipPPCSetup) {
@@ -84,7 +96,7 @@ int _MCP_LoadFile_patch(ipcmessage *msg) {
             replace_filesize = 0; // unknown
             replace_fileoffset = 0;
         }
-    }else{
+    }else if(!doWantReplaceRPX){
         doWantReplaceRPX = false; // Only replace it once.
         replace_path = NULL;
         return real_MCP_LoadFile(msg);
@@ -97,7 +109,8 @@ int _MCP_LoadFile_patch(ipcmessage *msg) {
         if (result >= 0) {
             return result;
         }
-
+    }else{
+        DEBUG_FUNCTION_LINE("replace_path was NULL\n");
     }
 
     return real_MCP_LoadFile(msg);
@@ -258,6 +271,7 @@ int _MCP_ioctl100_patch(ipcmessage *msg) {
                     rep_fileoffset = fileoffset;
                     doWantReplaceRPX = true;
                     //doWantReplaceXML = true;
+                    replace_valid = true;
 
                     DEBUG_FUNCTION_LINE("Will load %s for next title from target: %d (offset %d, filesize %d)\n", rpxpath, target, rep_fileoffset, rep_filesize);
                 }
