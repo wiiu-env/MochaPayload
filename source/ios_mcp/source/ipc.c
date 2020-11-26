@@ -165,8 +165,11 @@ static int ipc_ioctl(ipcmessage *message) {
             break;
         }
         case IOCTL_KERN_WRITE32: {
-            //! TODO: add syscall as on kern_read32
-            res = IOS_ERROR_NOEXISTS;
+            if ((message->ioctl.length_in < 8)) {
+                res = IOS_ERROR_INVALID_SIZE;
+            } else {
+                svcCustomKernelCommand(KERNEL_WRITE32, message->ioctl.buffer_in[0], message->ioctl.buffer_in[1]);
+            }
             break;
         }
             //!--------------------------------------------------------------------------------------------------------------
