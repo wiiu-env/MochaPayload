@@ -74,14 +74,6 @@ void instant_patches_setup(void) {
     *(volatile u32 *) (0x0501dd78 - 0x05000000 + 0x081C0000) = (volatile u32 *) THUMB_BL(0x0501dd78, MCP_ReadCOSXml_patch);
     *(volatile u32 *) (0x051105ce - 0x05000000 + 0x081C0000) = (volatile u32 *) THUMB_BL(0x051105ce, MCP_ReadCOSXml_patch);
 
-    // change system.xml to syshax.xml
-    /*
-    *(volatile u32*)mcp_rodata_phys(0x050600F0) = 0x79736861; // ysha
-    *(volatile u32*)mcp_rodata_phys(0x050600F4) = 0x782E786D; // x.xm
-
-    *(volatile u32*)mcp_rodata_phys(0x05060114) = 0x79736861; // ysha
-    *(volatile u32*)mcp_rodata_phys(0x05060118) = 0x782E786D; // x.xm
-    */
 
     // patch default title id to system menu
     *(volatile u32 *) mcp_data_phys(0x050B817C) = *(volatile u32 *) 0x0017FFF0;
