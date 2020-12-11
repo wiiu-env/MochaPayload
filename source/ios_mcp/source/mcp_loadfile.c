@@ -139,7 +139,7 @@ static int MCP_LoadCustomFile(int target, char *path, int filesize, int fileoffs
 
     DEBUG_FUNCTION_LINE("Load custom path \"%s\"\n", filepath);
 
-    if (filesize > 0 && (pos + fileoffset > filesize)) {
+    if (filesize > 0 && (pos > filesize)) {
         return 0;
     }
 
