@@ -167,7 +167,39 @@ int _MCP_ReadCOSXml_patch(uint32_t u1, uint32_t u2, MCPPPrepareTitleInfo *xmlDat
 
     int res = real_MCP_ReadCOSXml_patch(u1, u2, xmlData);
 
+    // if we replace the RPX we want to increase the max_codesize and give us full permission!
+    if (replace_valid) {
+        if (xmlData->titleId == 0x000500101004E000 ||
+            xmlData->titleId == 0x000500101004E100 ||
+            xmlData->titleId == 0x000500101004E200) {
+                xmlData->codegen_size = 0x02000000;
+                xmlData->codegen_core = 0x80000001;
+                xmlData->max_size = 0x40000000;
+                
+                // Set maximum codesize to 64 MiB
+                xmlData->max_codesize = 0x04000000;
+                xmlData->avail_size = 0;
+                xmlData->overlay_arena = 0;
 
+                // Give us full permissions everywhere
+                for (uint32_t i = 0; i < 19; i++) {                    
+                    xmlData->permissions[i].mask = 0xFFFFFFFFFFFFFFFF;
+                }
+                
+                xmlData->default_stack0_size = 0;
+                xmlData->default_stack1_size = 0;
+                xmlData->default_stack2_size = 0;
+                xmlData->default_redzone0_size = 0;
+                xmlData->default_redzone1_size = 0;
+                xmlData->default_redzone2_size = 0;
+                xmlData->exception_stack0_size = 0x00001000;
+                xmlData->exception_stack1_size = 0x00001000;
+                xmlData->exception_stack2_size = 0x00001000;
+        }
+    }
+    
+    // When the PPC Kernel reboots we replace the men.rpx to set up our PPC side again
+    // for this the Wii U Menu temporarily gets replaced by our root.rpx and needs code gen access
     if (!skipPPCSetup) {
         if (xmlData->titleId == 0x0005001010040000 ||
             xmlData->titleId == 0x0005001010040100 ||
@@ -176,24 +208,6 @@ int _MCP_ReadCOSXml_patch(uint32_t u1, uint32_t u2, MCPPPrepareTitleInfo *xmlDat
             xmlData->codegen_size = 0x02000000;
             xmlData->codegen_core = 0x80000001;
             xmlData->max_codesize = 0x02800000;
-            /*
-            xmlData->max_size = 0x40000000;
-            xmlData->max_codesize = 0x00800000;
-            xmlData->avail_size = 0;
-            xmlData->overlay_arena = 0;
-            for (uint32_t i = 0; i < 19; i++) {
-                xmlData->permissions[i].mask = 0xFFFFFFFFFFFFFFFF;
-            }
-            xmlData->default_stack0_size = 0;
-            xmlData->default_stack1_size = 0;
-            xmlData->default_stack2_size = 0;
-            xmlData->default_redzone0_size = 0;
-            xmlData->default_redzone1_size = 0;
-            xmlData->default_redzone2_size = 0;
-            xmlData->exception_stack0_size = 0x00001000;
-            xmlData->exception_stack1_size = 0x00001000;
-            xmlData->exception_stack2_size = 0x00001000;
-            */
         }
     }
 
