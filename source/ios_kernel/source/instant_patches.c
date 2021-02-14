@@ -50,7 +50,7 @@ void instant_patches_setup(void) {
     *(volatile u32 *) 0x1070FAEC = 0xEAFFFFF9;
 
     int (*_iosMapSharedUserExecution)(void *descr) = (void *) 0x08124F88;
-
+ 
     // patch kernel dev node registration
     *(volatile u32 *) 0x081430B4 = 1;
 
@@ -74,7 +74,6 @@ void instant_patches_setup(void) {
     *(volatile u32 *) (0x0501dd78 - 0x05000000 + 0x081C0000) = (volatile u32 *) THUMB_BL(0x0501dd78, MCP_ReadCOSXml_patch);
     *(volatile u32 *) (0x051105ce - 0x05000000 + 0x081C0000) = (volatile u32 *) THUMB_BL(0x051105ce, MCP_ReadCOSXml_patch);
 
-
     // patch default title id to system menu
     *(volatile u32 *) mcp_data_phys(0x050B817C) = *(volatile u32 *) 0x0017FFF0;
     *(volatile u32 *) mcp_data_phys(0x050B8180) = *(volatile u32 *) 0x0017FFF4;
@@ -84,11 +83,6 @@ void instant_patches_setup(void) {
 
     // set zero to start thread directly on first title change
     *(volatile u32 *) (0x050BC580 - 0x05000000 + 0x081C0000) = 0;
-    // down display launch image at this state
-    *(volatile u32 *) (_text_start - 4 - 0x05100000 + 0x13D80000) = 0;
-
-    // patch the read position for the cos xml's p4.mask(ios_fs) to read 0xFFFFFFFFFFFFFFFF
-    *(volatile u32 *) (0x05002BBE - 0x05000000 + 0x081C0000) = (volatile u32 *) THUMB_BL(0x05002BBE, patch_SD_access_check);
 
     ios_map_shared_info_t map_info;
     map_info.paddr = 0x050BD000 - 0x05000000 + 0x081C0000;
