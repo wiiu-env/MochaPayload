@@ -48,6 +48,11 @@ void instant_patches_setup(void) {
     // patch FSA raw access
     *(volatile u32 *) 0x1070FAE8 = 0x05812070;
     *(volatile u32 *) 0x1070FAEC = 0xEAFFFFF9;
+    
+    // patch /dev/odm IOCTL 0x06 to return the disc key if in_buf[0] > 2.
+    *(volatile u32 *) 0x10739948 = 0xe3a0b001; // mov r11, 0x01
+    *(volatile u32 *) 0x1073994C = 0xe3a07020; // mov r7, 0x20
+    *(volatile u32 *) 0x10739950 = 0xea000013; // b LAB_107399a8
 
     int (*_iosMapSharedUserExecution)(void *descr) = (void *) 0x08124F88;
  

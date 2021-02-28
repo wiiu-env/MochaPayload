@@ -107,6 +107,11 @@ void kernel_run_patches(u32 ios_elf_start) {
     section_write_word(ios_elf_start, 0x0812A1AC, ARM_BL(0x0812A1AC, crash_handler_data));
     section_write_word(ios_elf_start, 0x08129E50, ARM_BL(0x08129E50, crash_handler_undef_instr));
 
+    // patch /dev/odm IOCTL 0x06 to return the disc key if in_buf[0] > 2.
+    section_write_word(ios_elf_start, 0x10739948, 0xe3a0b001);
+    section_write_word(ios_elf_start, 0x1073994C, 0xe3a07020);
+    section_write_word(ios_elf_start, 0x10739950, 0xea000013);
+    
     section_write_word(ios_elf_start, 0x0812CD2C, ARM_B(0x0812CD2C, kernel_syscall_0x81));
 
     u32 patch_count = (u32) (((u8 *) kernel_patches_table_end) - ((u8 *) kernel_patches_table)) / sizeof(patch_table_t);
