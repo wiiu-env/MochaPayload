@@ -69,6 +69,11 @@ void instant_patches_setup(void) {
     // allow custom bootLogoTex and bootMovie.h264
     *(volatile u32 *) (0xE0030D68 - 0xE0000000 + 0x12900000) = 0xE3A00000;    // mov r0, #0
     *(volatile u32 *) (0xE0030D34 - 0xE0000000 + 0x12900000) = 0xE3A00000;    // mov r0, #0
+    
+    // Patch update check
+    *(volatile u32 *) (0xe22830e0 - 0xe2280000 + 0x13140000) = 0x00000000;
+    *(volatile u32 *) (0xe22b2a78 - 0xe2280000 + 0x13140000) = 0x00000000;
+    *(volatile u32 *) (0xe204fb68 - 0xe2000000 + 0x12EC0000) = 0xe3a00000;
 
     // allow any region title launch
     *(volatile u32 *) (0xE0030498 - 0xE0000000 + 0x12900000) = 0xE3A00000;    // mov r0, #0
