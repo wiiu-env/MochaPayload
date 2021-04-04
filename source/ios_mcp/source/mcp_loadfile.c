@@ -217,6 +217,8 @@ int _MCP_ReadCOSXml_patch(uint32_t u1, uint32_t u2, MCPPPrepareTitleInfo *xmlDat
     return res;
 }
 
+extern int _startMainThread(void);
+
 /*  RPX replacement! Call this ioctl to replace the next loaded RPX with an arbitrary path.
     DO NOT RETURN 0, this affects the codepaths back in the IOSU code */
 int _MCP_ioctl100_patch(ipcmessage *msg) {
@@ -292,6 +294,10 @@ int _MCP_ioctl100_patch(ipcmessage *msg) {
 
                     DEBUG_FUNCTION_LINE("Will load %s for next title from target: %d (offset %d, filesize %d)\n", rpxpath, target, rep_fileoffset, rep_filesize);
                 }
+                return 1;
+            }
+            case IPC_CUSTOM_START_MCP_THREAD: {
+                _startMainThread();
                 return 1;
             }
             default: {

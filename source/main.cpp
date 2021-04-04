@@ -28,7 +28,10 @@ int main(int argc, char **argv) {
     if (mcpFd >= 0) {
         int in = 0xFD;//IPC_CUSTOM_MEN_RPX_HOOK_COMPLETED;
         int out = 0;
+        IOS_Ioctl(mcpFd, 100, &in, sizeof(in), &out, sizeof(out));
 
+        in = 0xFA;//IPC_CUSTOM_START_MCP_THREAD;
+        out = 0;
         IOS_Ioctl(mcpFd, 100, &in, sizeof(in), &out, sizeof(out));
         IOS_Close(mcpFd);
     }

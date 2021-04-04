@@ -64,9 +64,7 @@ void instant_patches_setup(void) {
     // fix 10 minute timeout that crashes MCP after 10 minutes of booting
     *(volatile u32 *) (0x05022474 - 0x05000000 + 0x081C0000) = 0xFFFFFFFF;    // NEW_TIMEOUT
 
-    // start our MCP thread directly on first title change
     kernel_memset((void *) (0x050BD000 - 0x05000000 + 0x081C0000), 0, 0x3000);
-    *(volatile u32 *) (0x05054D6C - 0x05000000 + 0x081C0000) = ARM_B(0x05054D6C, _startMainThread);
 
     // allow custom bootLogoTex and bootMovie.h264
     *(volatile u32 *) (0xE0030D68 - 0xE0000000 + 0x12900000) = 0xE3A00000;    // mov r0, #0
