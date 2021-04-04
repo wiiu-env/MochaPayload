@@ -362,8 +362,7 @@ static int ipc_ioctl(ipcmessage *message) {
             message->ioctl.buffer_io[0] = FSA_ChangeMode(fd, path, mode);
             break;
         }
-        case IOCTL_FSA_FLUSHVOLUME:
-        {
+        case IOCTL_FSA_FLUSHVOLUME: {
             int fd = message->ioctl.buffer_in[0];
             char *path = ((char *)message->ioctl.buffer_in) + message->ioctl.buffer_in[1];
 

@@ -57,8 +57,7 @@ int FSA_Unmount(int fd, char *path, u32 flags) {
     return ret;
 }
 
-int FSA_FlushVolume(int fd, char* volume_path)
-{
+int FSA_FlushVolume(int fd, char* volume_path) {
 	u8* iobuf = allocIobuf();
 	u32* inbuf = (u32*)iobuf;
 	u32* outbuf = (u32*)&iobuf[0x520];

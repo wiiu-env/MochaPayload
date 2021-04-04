@@ -222,11 +222,9 @@ typedef struct {
     unsigned char unk3[0x12D8 - 0x68];
 } MCPLoadFileRequest;
 
-#define IPC_CUSTOM_LOG_STRING               0xFF
-#define IPC_CUSTOM_META_XML_SWAP_REQUIRED   0xFE
+#define IPC_CUSTOM_START_MCP_THREAD         0xFE
 #define IPC_CUSTOM_MEN_RPX_HOOK_COMPLETED   0xFD
 #define IPC_CUSTOM_LOAD_CUSTOM_RPX          0xFC
 #define IPC_CUSTOM_META_XML_READ            0xFB
-#define IPC_CUSTOM_START_MCP_THREAD         0xFA
 
 #define LOAD_FILE_TARGET_SD_CARD            0

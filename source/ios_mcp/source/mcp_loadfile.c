@@ -35,7 +35,6 @@ static bool doWantReplaceRPX = false;
 static bool replace_target_device = 0;
 static uint32_t rep_filesize = 0;
 static uint32_t rep_fileoffset = 0;
-static uint32_t gbl_counter = 0;
 static char rpxpath[256];
 
 #define log(fmt, ...) log_printf("%s: " fmt, __FUNCTION__, __VA_ARGS__)
@@ -234,37 +233,11 @@ int _MCP_ioctl100_patch(ipcmessage *msg) {
         int command = msg->ioctl.buffer_in[0];
 
         switch (command) {
-            case IPC_CUSTOM_LOG_STRING: {
-                //DEBUG_FUNCTION_LINE("IPC_CUSTOM_LOG_STRING\n");
-                if (msg->ioctl.length_in > 4) {
-                    char *str_ptr = (char *) &msg->ioctl.buffer_in[0x04 / 0x04];
-                    str_ptr[msg->ioctl.length_in - 0x04 - 1] = 0;
-                    log_printf("%s", str_ptr);
-                }
-                return 1;
-            }
-            case IPC_CUSTOM_META_XML_SWAP_REQUIRED: {
-                //DEBUG_FUNCTION_LINE("IPC_CUSTOM_META_XML_SWAP_REQUIRED\n");
-                /*if(doWantReplaceXML) {
-                    msg->ioctl.buffer_io[0] = 10;
-                } else {
-                    msg->ioctl.buffer_io[0] = 11;
-                }
-                return 1;*/
-            }
             case IPC_CUSTOM_MEN_RPX_HOOK_COMPLETED: {
                 DEBUG_FUNCTION_LINE("IPC_CUSTOM_MEN_RPX_HOOK_COMPLETED\n");
                 skipPPCSetup = true;
-                return 1;
+                break;
             }
-                /*
-                case IPC_CUSTOM_GET_AND_INCR_GBL_COUNTER: {
-                    DEBUG_FUNCTION_LINE("IPC_CUSTOM_GET_AND_INCR_GBL_COUNTER\n");
-                    gbl_counter++;
-                    if(msg->ioctl.length_io >= sizeof(ACPMetaXml)) {
-
-                    return 1;
-                }*/
             case IPC_CUSTOM_META_XML_READ: {
                 if (msg->ioctl.length_io >= sizeof(ACPMetaXml)) {
                     DEBUG_FUNCTION_LINE("IPC_CUSTOM_META_XML_READ\n");
@@ -272,7 +245,7 @@ int _MCP_ioctl100_patch(ipcmessage *msg) {
                     strncpy(app_ptr->longname_en, rpxpath, 256 - 1);
                     strncpy(app_ptr->shortname_en, rpxpath, 256 - 1);
                 }
-                return 1;
+                break;
             }
             case IPC_CUSTOM_LOAD_CUSTOM_RPX: {
                 DEBUG_FUNCTION_LINE("IPC_CUSTOM_LOAD_CUSTOM_RPX\n");
@@ -294,11 +267,11 @@ int _MCP_ioctl100_patch(ipcmessage *msg) {
 
                     DEBUG_FUNCTION_LINE("Will load %s for next title from target: %d (offset %d, filesize %d)\n", rpxpath, target, rep_fileoffset, rep_filesize);
                 }
-                return 1;
+                break;
             }
             case IPC_CUSTOM_START_MCP_THREAD: {
                 _startMainThread();
-                return 1;
+                break;
             }
             default: {
             }
