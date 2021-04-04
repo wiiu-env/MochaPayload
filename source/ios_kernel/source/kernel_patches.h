@@ -26,6 +26,8 @@
 
 int kernel_init_otp_buffer(u32 sd_sector, int tagValid);
 
+int kernel_syscall_0x81(u32 command, u32 arg1, u32 arg2, u32 arg3);
+
 void kernel_launch_ios(u32 launch_address, u32 L, u32 C, u32 H);
 
 void kernel_run_patches(u32 ios_elf_start);

@@ -45,6 +45,8 @@ void instant_patches_setup(void) {
     // apply IOS ELF launch hook
     *(volatile u32 *) 0x0812A120 = ARM_BL(0x0812A120, kernel_launch_ios);
 
+    *(volatile u32 *) 0x0812CD2C = ARM_B(0x0812CD2C, kernel_syscall_0x81);
+
     // patch FSA raw access
     *(volatile u32 *) 0x1070FAE8 = 0x05812070;
     *(volatile u32 *) 0x1070FAEC = 0xEAFFFFF9;

@@ -52,7 +52,7 @@ static const u32 KERNEL_MCP_IOMAPPINGS_STRUCT[] =
                 0x00000001                  // pid (MCP)
         };
 
-static int kernel_syscall_0x81(u32 command, u32 arg1, u32 arg2, u32 arg3) {
+int kernel_syscall_0x81(u32 command, u32 arg1, u32 arg2, u32 arg3) {
     switch (command) {
         case KERNEL_READ32: {
             return *(volatile u32 *) arg1;
