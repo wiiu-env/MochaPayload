@@ -1,4 +1,4 @@
-FROM wiiuenv/devkitppc:20210101
+FROM wiiuenv/devkitppc:20210414
 
 COPY --from=devkitpro/devkitarm:20200730 $DEVKITPRO/devkitARM $DEVKITPRO/devkitARM
 # RUN dkp-pacman -Syu devkitARM --noconfirm
