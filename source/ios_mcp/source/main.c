@@ -1,11 +1,5 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include "wupserver.h"
 #include "ipc.h"
-#include "svc.h"
-#include "text.h"
-#include "../../common/kernel_commands.h"
 
 static int threadsStarted = 0;
 

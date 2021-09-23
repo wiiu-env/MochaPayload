@@ -1,6 +1,4 @@
-#include <stdio.h>
-#include <string.h>
-#include <string>
+#include <cstring>
 
 #include <coreinit/cache.h>
 #include <coreinit/ios.h>
@@ -15,7 +13,7 @@
 int main(int argc, char **argv) {
     WHBLogUdpInit();
     WHBLogPrintf("Hello from mocha");
-    
+
     uint64_t sysmenuIdUll = _SYSGetSystemApplicationTitleId(SYSTEM_APP_ID_HOME_MENU);
     memcpy((void *) 0xF417FFF0, &sysmenuIdUll, 8);
     DCStoreRange((void *) 0xF417FFF0, 0x8);

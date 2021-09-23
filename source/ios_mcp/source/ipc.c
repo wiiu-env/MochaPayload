@@ -110,8 +110,8 @@ static int ipc_ioctl(ipcmessage *message) {
                 memcpy(arguments, message->ioctl.buffer_in + 1, (size_arguments < 8 * 4) ? size_arguments : (8 * 4));
 
                 // return error code as data
-                message->ioctl.buffer_io[0] = ((int (*const)(u32, u32, u32, u32, u32, u32, u32, u32)) (MCP_SVC_BASE + svc_id * 8))(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4], arguments[5], arguments[6],
-                                                                                                                                   arguments[7]);
+                message->ioctl.buffer_io[0] = ((int (*const)(u32, u32, u32, u32, u32, u32, u32, u32)) (MCP_SVC_BASE + svc_id * 8))(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4],
+                                                                                                                                   arguments[5], arguments[6], arguments[7]);
             }
             break;
         }
@@ -364,7 +364,7 @@ static int ipc_ioctl(ipcmessage *message) {
         }
         case IOCTL_FSA_FLUSHVOLUME: {
             int fd = message->ioctl.buffer_in[0];
-            char *path = ((char *)message->ioctl.buffer_in) + message->ioctl.buffer_in[1];
+            char *path = ((char *) message->ioctl.buffer_in) + message->ioctl.buffer_in[1];
 
             message->ioctl.buffer_io[0] = FSA_FlushVolume(fd, path);
             break;

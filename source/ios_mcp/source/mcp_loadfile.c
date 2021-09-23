@@ -21,7 +21,6 @@
 #include "../../common/ipc_defs.h"
 #include "fsa.h"
 #include "svc.h"
-#include "utils.h"
 #include <string.h>
 
 int (*const real_MCP_LoadFile)(ipcmessage *msg) = (void *) 0x0501CAA8 + 1; //+1 for thumb
@@ -62,12 +61,12 @@ int _MCP_LoadFile_patch(ipcmessage *msg) {
     int replace_fileoffset = rep_fileoffset;
     char *replace_path = rpxpath;
 
-    if(strlen(request->name) > 1 && request->name[strlen(request->name)-1] == 'x'){
+    if (strlen(request->name) > 1 && request->name[strlen(request->name) - 1] == 'x') {
         if (strncmp(request->name, "safe.rpx", strlen("safe.rpx")) != 0) {
             //DEBUG_FUNCTION_LINE("set replace_valid to false\n");
             replace_valid = false;
-        }else if(request->pos == 0){
-            if(replace_valid){
+        } else if (request->pos == 0) {
+            if (replace_valid) {
                 //DEBUG_FUNCTION_LINE("set doWantReplaceRPX to true\n");
                 doWantReplaceRPX = true;
             }
@@ -95,7 +94,7 @@ int _MCP_LoadFile_patch(ipcmessage *msg) {
             replace_filesize = 0; // unknown
             replace_fileoffset = 0;
         }
-    }else if(!doWantReplaceRPX){
+    } else if (!doWantReplaceRPX) {
         doWantReplaceRPX = false; // Only replace it once.
         replace_path = NULL;
         return real_MCP_LoadFile(msg);
@@ -108,7 +107,7 @@ int _MCP_LoadFile_patch(ipcmessage *msg) {
         if (result >= 0) {
             return result;
         }
-    }else{
+    } else {
         DEBUG_FUNCTION_LINE("replace_path was NULL\n");
     }
 
@@ -165,7 +164,7 @@ int _MCP_ReadCOSXml_patch(uint32_t u1, uint32_t u2, MCPPPrepareTitleInfo *xmlDat
     int (*const real_MCP_ReadCOSXml_patch)(uint32_t u1, uint32_t u2, MCPPPrepareTitleInfo *xmlData) = (void *) 0x050024ec + 1; //+1 for thumb
 
     int res = real_MCP_ReadCOSXml_patch(u1, u2, xmlData);
-        
+
     // Give us sd access!
     xmlData->permissions[4].mask = 0xFFFFFFFFFFFFFFFF;
 
@@ -174,32 +173,32 @@ int _MCP_ReadCOSXml_patch(uint32_t u1, uint32_t u2, MCPPPrepareTitleInfo *xmlDat
         if (xmlData->titleId == 0x000500101004E000 ||
             xmlData->titleId == 0x000500101004E100 ||
             xmlData->titleId == 0x000500101004E200) {
-                xmlData->codegen_size = 0x02000000;
-                xmlData->codegen_core = 0x80000001;
-                xmlData->max_size = 0x40000000;
-                
-                // Set maximum codesize to 64 MiB
-                xmlData->max_codesize = 0x04000000;
-                xmlData->avail_size = 0;
-                xmlData->overlay_arena = 0;
+            xmlData->codegen_size = 0x02000000;
+            xmlData->codegen_core = 0x80000001;
+            xmlData->max_size = 0x40000000;
 
-                // Give us full permissions everywhere
-                for (uint32_t i = 0; i < 19; i++) {                    
-                    xmlData->permissions[i].mask = 0xFFFFFFFFFFFFFFFF;
-                }
-                
-                xmlData->default_stack0_size = 0;
-                xmlData->default_stack1_size = 0;
-                xmlData->default_stack2_size = 0;
-                xmlData->default_redzone0_size = 0;
-                xmlData->default_redzone1_size = 0;
-                xmlData->default_redzone2_size = 0;
-                xmlData->exception_stack0_size = 0x00001000;
-                xmlData->exception_stack1_size = 0x00001000;
-                xmlData->exception_stack2_size = 0x00001000;
+            // Set maximum codesize to 64 MiB
+            xmlData->max_codesize = 0x04000000;
+            xmlData->avail_size = 0;
+            xmlData->overlay_arena = 0;
+
+            // Give us full permissions everywhere
+            for (uint32_t i = 0; i < 19; i++) {
+                xmlData->permissions[i].mask = 0xFFFFFFFFFFFFFFFF;
+            }
+
+            xmlData->default_stack0_size = 0;
+            xmlData->default_stack1_size = 0;
+            xmlData->default_stack2_size = 0;
+            xmlData->default_redzone0_size = 0;
+            xmlData->default_redzone1_size = 0;
+            xmlData->default_redzone2_size = 0;
+            xmlData->exception_stack0_size = 0x00001000;
+            xmlData->exception_stack1_size = 0x00001000;
+            xmlData->exception_stack2_size = 0x00001000;
         }
     }
-    
+
     // When the PPC Kernel reboots we replace the men.rpx to set up our PPC side again
     // for this the Wii U Menu temporarily gets replaced by our root.rpx and needs code gen access
     if (!skipPPCSetup) {

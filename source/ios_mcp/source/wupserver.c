@@ -55,7 +55,8 @@ static int serverCommandHandler(u32 *command_buffer, u32 length) {
 
             // return error code as data
             out_length = 8;
-            command_buffer[1] = ((int (*const)(u32, u32, u32, u32, u32, u32, u32, u32)) (MCP_SVC_BASE + svc_id * 8))(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4], arguments[5], arguments[6], arguments[7]);
+            command_buffer[1] = ((int (*const)(u32, u32, u32, u32, u32, u32, u32, u32)) (MCP_SVC_BASE + svc_id * 8))(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4], arguments[5],
+                                                                                                                     arguments[6], arguments[7]);
         }
             break;
         case 3:

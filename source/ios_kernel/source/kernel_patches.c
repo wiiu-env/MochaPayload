@@ -111,12 +111,12 @@ void kernel_run_patches(u32 ios_elf_start) {
     section_write_word(ios_elf_start, 0x10739948, 0xe3a0b001);
     section_write_word(ios_elf_start, 0x1073994C, 0xe3a07020);
     section_write_word(ios_elf_start, 0x10739950, 0xea000013);
-    
+
     // update check
     section_write_word(ios_elf_start, 0xe22830e0, 0x00000000);
     section_write_word(ios_elf_start, 0xe22b2a78, 0x00000000);
     section_write_word(ios_elf_start, 0xe204fb68, 0xe3a00000);
-    
+
     section_write_word(ios_elf_start, 0x0812CD2C, ARM_B(0x0812CD2C, kernel_syscall_0x81));
 
     u32 patch_count = (u32) (((u8 *) kernel_patches_table_end) - ((u8 *) kernel_patches_table)) / sizeof(patch_table_t);

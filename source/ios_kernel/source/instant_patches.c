@@ -50,14 +50,14 @@ void instant_patches_setup(void) {
     // patch FSA raw access
     *(volatile u32 *) 0x1070FAE8 = 0x05812070;
     *(volatile u32 *) 0x1070FAEC = 0xEAFFFFF9;
-    
+
     // patch /dev/odm IOCTL 0x06 to return the disc key if in_buf[0] > 2.
     *(volatile u32 *) 0x10739948 = 0xe3a0b001; // mov r11, 0x01
     *(volatile u32 *) 0x1073994C = 0xe3a07020; // mov r7, 0x20
     *(volatile u32 *) 0x10739950 = 0xea000013; // b LAB_107399a8
 
     int (*_iosMapSharedUserExecution)(void *descr) = (void *) 0x08124F88;
- 
+
     // patch kernel dev node registration
     *(volatile u32 *) 0x081430B4 = 1;
 
@@ -69,7 +69,7 @@ void instant_patches_setup(void) {
     // allow custom bootLogoTex and bootMovie.h264
     *(volatile u32 *) (0xE0030D68 - 0xE0000000 + 0x12900000) = 0xE3A00000;    // mov r0, #0
     *(volatile u32 *) (0xE0030D34 - 0xE0000000 + 0x12900000) = 0xE3A00000;    // mov r0, #0
-    
+
     // Patch update check
     *(volatile u32 *) (0xe22830e0 - 0xe2280000 + 0x13140000) = 0x00000000;
     *(volatile u32 *) (0xe22b2a78 - 0xe2280000 + 0x13140000) = 0x00000000;

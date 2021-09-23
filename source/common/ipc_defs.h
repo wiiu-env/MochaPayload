@@ -10,7 +10,7 @@
 #define CHECK_OFFSET(Type, Offset, Field) \
       static_assert(offsetof(Type, Field) == Offset, \
                     #Type "::" #Field " must be at offset " #Offset)
-                    
+
 typedef struct __attribute__((packed)) {
     uint64_t title_id;
     uint64_t boss_id;
@@ -133,7 +133,7 @@ typedef struct __attribute__((packed)) {
     uint32_t groupId;
     uint32_t cmdFlags;
     char argstr[4096];
-    char* argv[64];
+    char *argv[64];
     uint32_t max_size;
     uint32_t avail_size;
     uint32_t codegen_size;
