@@ -167,6 +167,8 @@ int _MCP_ReadCOSXml_patch(uint32_t u1, uint32_t u2, MCPPPrepareTitleInfo *xmlDat
 
     // Give us sd access!
     xmlData->permissions[4].mask = 0xFFFFFFFFFFFFFFFF;
+    // Give all titles permission to use ACP
+    xmlData->permissions[10].mask = 0xFFFFFFFFFFFFFFFF;
 
     // if we replace the RPX we want to increase the max_codesize and give us full permission!
     if (replace_valid) {
