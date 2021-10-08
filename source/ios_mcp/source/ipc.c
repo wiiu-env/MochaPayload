@@ -47,6 +47,7 @@
 #define IOCTL_REPEATED_WRITE        0x05
 #define IOCTL_KERN_READ32           0x06
 #define IOCTL_KERN_WRITE32          0x07
+#define IOCTL_READ_OTP              0x08
 
 #define IOCTL_FSA_OPEN              0x40
 #define IOCTL_FSA_CLOSE             0x41
@@ -170,6 +171,14 @@ static int ipc_ioctl(ipcmessage *message) {
                 res = IOS_ERROR_INVALID_SIZE;
             } else {
                 svcCustomKernelCommand(KERNEL_WRITE32, message->ioctl.buffer_in[0], message->ioctl.buffer_in[1]);
+            }
+            break;
+        }
+        case IOCTL_READ_OTP: {
+            if ((message->ioctl.length_io < 0x400)) {
+                res = IOS_ERROR_INVALID_SIZE;
+            } else {
+                svcCustomKernelCommand(KERNEL_READ_OTP, message->ioctl.buffer_io);
             }
             break;
         }

@@ -71,6 +71,11 @@ int kernel_syscall_0x81(u32 command, u32 arg1, u32 arg2, u32 arg3) {
             //kernel_memcpy((void*)arg1, &cfw_config, sizeof(cfw_config));
             break;
         }
+        case KERNEL_READ_OTP: {
+            int (*read_otp_internal)(int index, void* out_buf, u32 size) = (int (*)(int, void*, u32)) 0x08120248;
+            read_otp_internal(0, (void*)(arg1), 0x400);
+            break;
+        }
         default:
             return -1;
     }
