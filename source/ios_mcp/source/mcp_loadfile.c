@@ -274,6 +274,31 @@ int _MCP_ioctl100_patch(ipcmessage *msg) {
                 _startMainThread();
                 break;
             }
+
+            case IPC_CUSTOM_START_USB_LOGGING: {
+                if(*((uint32_t*)0x050290dc) == 0x42424242){
+                    // Skip syslog after a reload
+                    break;
+                }
+                int handle = svcOpen("/dev/testproc1", 0);
+                if(handle > 0){
+                    svcResume(handle);
+                    svcClose(handle);
+                }
+                
+                handle = svcOpen("/dev/usb_syslog", 0);
+                if(handle > 0){
+                    svcResume(handle);
+                    svcClose(handle);
+                }
+                
+                // Kill existing syslogs to avoid long catch up
+                uint32_t * bufferPtr = (uint32_t*)(*(uint32_t*)0x05095ecc);
+                bufferPtr[0] = 0;
+                bufferPtr[1] = 0;
+
+                break;
+            }
             default: {
             }
         }

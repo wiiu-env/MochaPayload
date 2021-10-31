@@ -17,6 +17,10 @@ void svcFree(u32 heapid, void *ptr);
 
 int svcOpen(char *name, int mode);
 
+int svcSuspend(int fd);
+
+int svcResume(int fd);
+
 int svcClose(int fd);
 
 int svcIoctl(int fd, u32 request, void *input_buffer, u32 input_buffer_len, void *output_buffer, u32 output_buffer_len);

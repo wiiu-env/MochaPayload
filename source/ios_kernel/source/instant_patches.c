@@ -84,6 +84,11 @@ void instant_patches_setup(void) {
     *(volatile u32 *) (0x0501dd78 - 0x05000000 + 0x081C0000) = THUMB_BL(0x0501dd78, MCP_ReadCOSXml_patch);
     *(volatile u32 *) (0x051105ce - 0x05000000 + 0x081C0000) = THUMB_BL(0x051105ce, MCP_ReadCOSXml_patch);
 
+    // Patch MCP debugmode check for syslog
+    *(volatile u32 *) (0x050290d8 - 0x05000000 + 0x081C0000) = 0x20004770;
+    // Patch TEST to allow syslog
+    *(volatile u32 *) (0xe4007828 - 0xe4000000 + 0x13A40000) = 0xe3a00000;
+
     // patch default title id to system menu
     *(volatile u32 *) mcp_data_phys(0x050B817C) = *(volatile u32 *) 0x0017FFF0;
     *(volatile u32 *) mcp_data_phys(0x050B8180) = *(volatile u32 *) 0x0017FFF4;
