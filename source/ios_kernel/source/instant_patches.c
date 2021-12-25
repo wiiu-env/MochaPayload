@@ -83,6 +83,9 @@ void instant_patches_setup(void) {
 
     *(volatile u32 *) (0x0501dd78 - 0x05000000 + 0x081C0000) = THUMB_BL(0x0501dd78, MCP_ReadCOSXml_patch);
     *(volatile u32 *) (0x051105ce - 0x05000000 + 0x081C0000) = THUMB_BL(0x051105ce, MCP_ReadCOSXml_patch);
+    
+    // give us bsp::ee:read permission for PPC
+    *(volatile u32 *) (0xe6044db0 - 0xe6042000 + 0x13d02000) = 0x000001F0;
 
     // Patch MCP debugmode check for syslog
     *(volatile u32 *) (0x050290d8 - 0x05000000 + 0x081C0000) = 0x20004770;

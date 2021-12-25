@@ -128,6 +128,9 @@ void kernel_run_patches(u32 ios_elf_start) {
     // Write magic word to disable custom IPC
     section_write_word(ios_elf_start, 0x050290dc, 0x42424242);
     
+    // give us bsp::ee:read permission for PPC
+    section_write_word(ios_elf_start, 0xe6044db0, 0x000001F0);
+    
     // patch TEST debug mode check
     //section_write_word(ios_elf_start, 0xe4016a78, 0xe3a00000);
     section_write_word(ios_elf_start, 0xe4007828, 0xe3a00000);
