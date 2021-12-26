@@ -3,7 +3,6 @@
 #include <string.h>
 #include "socket.h"
 #include "svc.h"
-#include "text.h"
 #include "imports.h"
 
 static int socket_handle = 0;

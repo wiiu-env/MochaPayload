@@ -26,7 +26,6 @@
 #include "elf_patcher.h"
 #include "ios_mcp_patches.h"
 #include "kernel_patches.h"
-#include "exception_handler.h"
 #include "fsa.h"
 #include "utils.h"
 
@@ -107,10 +106,6 @@ void kernel_run_patches(u32 ios_elf_start) {
     section_write_word(ios_elf_start, 0x0812A120, ARM_BL(0x0812A120, kernel_launch_ios));
 
     section_write(ios_elf_start, 0x08140DE0, KERNEL_MCP_IOMAPPINGS_STRUCT, sizeof(KERNEL_MCP_IOMAPPINGS_STRUCT));
-
-    section_write_word(ios_elf_start, 0x0812A134, ARM_BL(0x0812A134, crash_handler_prefetch));
-    section_write_word(ios_elf_start, 0x0812A1AC, ARM_BL(0x0812A1AC, crash_handler_data));
-    section_write_word(ios_elf_start, 0x08129E50, ARM_BL(0x08129E50, crash_handler_undef_instr));
 
     // patch /dev/odm IOCTL 0x06 to return the disc key if in_buf[0] > 2.
     section_write_word(ios_elf_start, 0x10739948, 0xe3a0b001);

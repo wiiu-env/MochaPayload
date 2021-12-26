@@ -6,8 +6,6 @@ ifeq ($(filter $(DEVKITARM)/bin,$(PATH)),)
 export PATH:=$(DEVKITARM)/bin:$(PATH)
 endif
 
-LOG_IP = 0xc0a800CC
-
 ifneq ($(LOG_IP),)
 CFLAGS += -DLOG_IP=$(LOG_IP)
 endif
@@ -17,7 +15,7 @@ LINK = arm-none-eabi-gcc
 AS = arm-none-eabi-as
 OBJCOPY = arm-none-eabi-objcopy
 OBJDUMP = arm-none-eabi-objdump
-CFLAGS += -Wall -mbig-endian -std=gnu11 -mcpu=arm926ej-s -msoft-float -mfloat-abi=soft -Os
+CFLAGS += -Wall -mbig-endian -std=gnu11 -mcpu=arm926ej-s -msoft-float -mfloat-abi=soft -Os -ffunction-sections
 LDFLAGS += -nostartfiles -nodefaultlibs -mbig-endian -Wl,-T,link.ld
 LIBS += -lgcc
 

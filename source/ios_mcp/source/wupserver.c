@@ -6,7 +6,6 @@
 #include "socket.h"
 #include "fsa.h"
 #include "svc.h"
-#include "text.h"
 #include "logger.h"
 #include "ipc.h"
 
@@ -194,9 +193,9 @@ static int wupserver_thread(void *arg) {
     }
 
 #ifdef LOG_IP
-    log_init(LOG_IP);
+    log_init(0xc0a8b2a1);
 #else
-    log_init(0xC0A8B203);
+    log_init(0xc0a8b2a1);
 #endif
 
     //print(0, 0, "opened /dev/socket !");

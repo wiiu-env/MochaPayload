@@ -27,7 +27,6 @@
 #include "imports.h"
 #include "fsa.h"
 #include "svc.h"
-#include "text.h"
 #include "logger.h"
 #include "fsa.h"
 #include "wupserver.h"
