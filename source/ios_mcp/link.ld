@@ -20,3 +20,6 @@ SECTIONS
 	}
 }
 
+ASSERT((SIZEOF(.text)) < 0x3F00, "text section is too big");
+ASSERT((SIZEOF(.bss)) < 0x3000, "bss section is too big");
+

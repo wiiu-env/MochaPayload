@@ -64,7 +64,7 @@ void instant_patches_setup(void) {
     // fix 10 minute timeout that crashes MCP after 10 minutes of booting
     *(volatile u32 *) (0x05022474 - 0x05000000 + 0x081C0000) = 0xFFFFFFFF;    // NEW_TIMEOUT
 
-    kernel_memset((void *) (0x050BD000 - 0x05000000 + 0x081C0000), 0, 0x3000);
+    kernel_memset((void *) (0x050BD000 - 0x05000000 + 0x081C0000), 0, 0x2F00);
 
     // allow custom bootLogoTex and bootMovie.h264
     *(volatile u32 *) (0xE0030D68 - 0xE0000000 + 0x12900000) = 0xE3A00000;    // mov r0, #0
@@ -83,7 +83,7 @@ void instant_patches_setup(void) {
 
     *(volatile u32 *) (0x0501dd78 - 0x05000000 + 0x081C0000) = THUMB_BL(0x0501dd78, MCP_ReadCOSXml_patch);
     *(volatile u32 *) (0x051105ce - 0x05000000 + 0x081C0000) = THUMB_BL(0x051105ce, MCP_ReadCOSXml_patch);
-    
+
     // give us bsp::ee:read permission for PPC
     *(volatile u32 *) (0xe6044db0 - 0xe6042000 + 0x13d02000) = 0x000001F0;
 
@@ -95,6 +95,11 @@ void instant_patches_setup(void) {
     // patch default title id to system menu
     *(volatile u32 *) mcp_data_phys(0x050B817C) = *(volatile u32 *) 0x0017FFF0;
     *(volatile u32 *) mcp_data_phys(0x050B8180) = *(volatile u32 *) 0x0017FFF4;
+
+    // Place the environment path at the end of our .text section.
+    for (int i = 0; i < 0x100; i += 4) {
+        *(volatile u32 *) (0x05119F00 - 0x05100000 + 0x13D80000 + i) = *(volatile u32 *) (0x0017FEF0 + i);
+    }
 
     // force check USB storage on load
     *(volatile u32 *) acp_phys(0xE012202C) = 0x00000001; // find USB flag

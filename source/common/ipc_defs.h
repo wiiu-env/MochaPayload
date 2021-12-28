@@ -227,5 +227,6 @@ typedef struct {
 #define IPC_CUSTOM_LOAD_CUSTOM_RPX          0xFC
 #define IPC_CUSTOM_META_XML_READ            0xFB
 #define IPC_CUSTOM_START_USB_LOGGING        0xFA
+#define IPC_CUSTOM_COPY_ENVIRONMENT_PATH    0xF9
 
 #define LOAD_FILE_TARGET_SD_CARD            0
