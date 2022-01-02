@@ -28,6 +28,7 @@
 #include "kernel_patches.h"
 #include "fsa.h"
 #include "utils.h"
+#include "thread.h"
 
 extern void __KERNEL_CODE_START(void);
 
@@ -51,22 +52,28 @@ static const u32 KERNEL_MCP_IOMAPPINGS_STRUCT[] =
                 0x00000001                  // pid (MCP)
         };
 
+ThreadContext_t** currentThreadContext = (ThreadContext_t**) 0x08173ba0;
+uint32_t* domainAccessPermissions = (uint32_t*) 0x081a4000;
+
 int kernel_syscall_0x81(u32 command, u32 arg1, u32 arg2, u32 arg3) {
+    int result = 0;
+    int level = disable_interrupts();
+    set_domain_register(domainAccessPermissions[0]); // 0 = KERNEL
+
     switch (command) {
         case KERNEL_READ32: {
-            return *(volatile u32 *) arg1;
+            result = *(volatile u32 *) arg1;
+            break;
         }
         case KERNEL_WRITE32: {
             *(volatile u32 *) arg1 = arg2;
             break;
         }
         case KERNEL_MEMCPY: {
-            //set_domain_register(0xFFFFFFFF);
             kernel_memcpy((void *) arg1, (void *) arg2, arg3);
             break;
         }
         case KERNEL_GET_CFW_CONFIG: {
-            //set_domain_register(0xFFFFFFFF);
             //kernel_memcpy((void*)arg1, &cfw_config, sizeof(cfw_config));
             break;
         }
@@ -75,10 +82,16 @@ int kernel_syscall_0x81(u32 command, u32 arg1, u32 arg2, u32 arg3) {
             read_otp_internal(0, (void*)(arg1), 0x400);
             break;
         }
-        default:
-            return -1;
+        default: {
+            result = -1;
+            break;
+        }
     }
-    return 0;
+
+    set_domain_register(domainAccessPermissions[(*currentThreadContext)->pid]);
+    enable_interrupts(level);
+
+    return result;
 }
 
 void kernel_launch_ios(u32 launch_address, u32 L, u32 C, u32 H) {
