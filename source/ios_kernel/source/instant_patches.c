@@ -77,6 +77,8 @@ void instant_patches_setup(void) {
 
     // allow any region title launch
     *(volatile u32 *) (0xE0030498 - 0xE0000000 + 0x12900000) = 0xE3A00000;    // mov r0, #0
+    // Patch CheckTitleLaunch to ignore gamepad connected result
+    *(volatile u32 *) (0xE0030868 - 0xE0000000 + 0x12900000) = 0xE3A00000;    // mov r0, #0
 
     *(volatile u32 *) (0x050254D6 - 0x05000000 + 0x081C0000) = THUMB_BL(0x050254D6, MCP_LoadFile_patch);
     *(volatile u32 *) (0x05025242 - 0x05000000 + 0x081C0000) = THUMB_BL(0x05025242, MCP_ioctl100_patch);
