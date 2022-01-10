@@ -167,8 +167,16 @@ int _MCP_ReadCOSXml_patch(uint32_t u1, uint32_t u2, MCPPPrepareTitleInfo *xmlDat
 
     // Give us sd access!
     xmlData->permissions[4].mask = 0xFFFFFFFFFFFFFFFF;
-    // Give all titles permission to use ACP
-    xmlData->permissions[10].mask = 0xFFFFFFFFFFFFFFFF;
+    /*
+    For some reason Mass Effects 3 softlocks when it has full ACP permissions.
+    */
+    if (xmlData->titleId != 0x000500001010DC00 && // Mass Effect 3 Special Edition USA
+        xmlData->titleId != 0x000500001010F500 && // Mass Effect 3 Special Edition EUR
+        xmlData->titleId != 0x0005000010113000) { // Mass Effect 3 Special Edition JPN
+            
+        // Give all titles permission to use ACP
+        xmlData->permissions[10].mask = 0xFFFFFFFFFFFFFFFF;
+    }
 
     // if we replace the RPX we want to increase the max_codesize and give us full permission!
     if (replace_valid) {
