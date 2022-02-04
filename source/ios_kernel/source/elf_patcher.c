@@ -21,16 +21,14 @@
  * 3. This notice may not be removed or altered from any source
  * distribution.
  ***************************************************************************/
-#include "types.h"
 #include "elf_abi.h"
+#include "types.h"
 #include "utils.h"
 
 static Elf32_Phdr *get_section(u32 data, u32 vaddr) {
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *) data;
 
-    if (!IS_ELF (*ehdr)
-        || (ehdr->e_type != ET_EXEC)
-        || (ehdr->e_machine != EM_ARM)) {
+    if (!IS_ELF(*ehdr) || (ehdr->e_type != ET_EXEC) || (ehdr->e_machine != EM_ARM)) {
         return 0;
     }
 

@@ -2,14 +2,15 @@
 
 #include <assert.h>
 #include <stddef.h>
+#include <stdint.h>
 
-#define CHECK_SIZE(Type, Size) \
-      static_assert(sizeof(Type) == Size, \
-                    #Type " must be " #Size " bytes")
+#define CHECK_SIZE(Type, Size)          \
+    static_assert(sizeof(Type) == Size, \
+                  #Type " must be " #Size " bytes")
 
-#define CHECK_OFFSET(Type, Offset, Field) \
-      static_assert(offsetof(Type, Field) == Offset, \
-                    #Type "::" #Field " must be at offset " #Offset)
+#define CHECK_OFFSET(Type, Offset, Field)          \
+    static_assert(offsetof(Type, Field) == Offset, \
+                  #Type "::" #Field " must be at offset " #Offset)
 
 typedef struct __attribute__((packed)) {
     uint64_t title_id;
@@ -222,11 +223,11 @@ typedef struct {
     unsigned char unk3[0x12D8 - 0x68];
 } MCPLoadFileRequest;
 
-#define IPC_CUSTOM_START_MCP_THREAD         0xFE
-#define IPC_CUSTOM_MEN_RPX_HOOK_COMPLETED   0xFD
-#define IPC_CUSTOM_LOAD_CUSTOM_RPX          0xFC
-#define IPC_CUSTOM_META_XML_READ            0xFB
-#define IPC_CUSTOM_START_USB_LOGGING        0xFA
-#define IPC_CUSTOM_COPY_ENVIRONMENT_PATH    0xF9
+#define IPC_CUSTOM_START_MCP_THREAD       0xFE
+#define IPC_CUSTOM_MEN_RPX_HOOK_COMPLETED 0xFD
+#define IPC_CUSTOM_LOAD_CUSTOM_RPX        0xFC
+#define IPC_CUSTOM_META_XML_READ          0xFB
+#define IPC_CUSTOM_START_USB_LOGGING      0xFA
+#define IPC_CUSTOM_COPY_ENVIRONMENT_PATH  0xF9
 
-#define LOAD_FILE_TARGET_SD_CARD            0
+#define LOAD_FILE_TARGET_SD_CARD          0

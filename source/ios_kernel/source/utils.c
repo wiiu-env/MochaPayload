@@ -30,7 +30,7 @@ void reverse_memcpy(void *dst, const void *src, unsigned int size) {
     if ((size >= 4) && !((dst - src) & 3)) {
         const unsigned int *src_p32;
         unsigned int *dst_p32;
-        unsigned int endDst = ((unsigned int) dst) + size;
+        unsigned int endDst  = ((unsigned int) dst) + size;
         unsigned int endRest = endDst & 3;
 
         if (endRest) {

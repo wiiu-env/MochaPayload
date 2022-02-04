@@ -1,8 +1,8 @@
-#include <stdlib.h>
-#include <string.h>
 #include "net_ifmgr_ncl.h"
 #include "imports.h"
 #include "svc.h"
+#include <stdlib.h>
+#include <string.h>
 
 static int ifmgrncl_handle = 0;
 
@@ -40,9 +40,9 @@ static void freeIobuf(void *ptr) {
 }
 
 int IFMGRNCL_GetInterfaceStatus(u16 interface_id, u16 *out_status) {
-    u8 *iobuf1 = allocIobuf(0x2);
-    u16 *inbuf = (u16 *) iobuf1;
-    u8 *iobuf2 = allocIobuf(0x8);
+    u8 *iobuf1  = allocIobuf(0x2);
+    u16 *inbuf  = (u16 *) iobuf1;
+    u8 *iobuf2  = allocIobuf(0x8);
     u16 *outbuf = (u16 *) iobuf2;
 
     inbuf[0] = interface_id;

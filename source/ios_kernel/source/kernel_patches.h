@@ -24,6 +24,8 @@
 #ifndef _KERNEL_PATCHES_H
 #define _KERNEL_PATCHES_H
 
+#include "types.h"
+
 int kernel_init_otp_buffer(u32 sd_sector, int tagValid);
 
 int kernel_syscall_0x81(u32 command, u32 arg1, u32 arg2, u32 arg3);

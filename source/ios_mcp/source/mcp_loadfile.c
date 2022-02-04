@@ -16,31 +16,31 @@
  * - each request routes here where we can do whatever
  */
 
-#include "logger.h"
-#include "ipc_types.h"
 #include "../../common/ipc_defs.h"
 #include "fsa.h"
+#include "ipc_types.h"
+#include "logger.h"
 #include "svc.h"
 #include <string.h>
 
-int (*const real_MCP_LoadFile)(ipcmessage *msg) = (void *) 0x0501CAA8 + 1; //+1 for thumb
+int (*const real_MCP_LoadFile)(ipcmessage *msg)                                                                                                      = (void *) 0x0501CAA8 + 1; //+1 for thumb
 int (*const MCP_DoLoadFile)(const char *path, const char *path2, void *outputBuffer, uint32_t outLength, uint32_t pos, int *bytesRead, uint32_t unk) = (void *) 0x05017248 + 1;
 
 static int MCP_LoadCustomFile(int target, char *path, int filesize, int fileoffset, void *out_buffer, int buffer_len, int pos);
 
-static bool replace_valid = false;
-static bool skipPPCSetup = false;
-static bool doWantReplaceRPX = false;
+static bool replace_valid         = false;
+static bool skipPPCSetup          = false;
+static bool doWantReplaceRPX      = false;
 static bool replace_target_device = 0;
-static uint32_t rep_filesize = 0;
-static uint32_t rep_fileoffset = 0;
+static uint32_t rep_filesize      = 0;
+static uint32_t rep_fileoffset    = 0;
 static char rpxpath[256];
 
 #define log(fmt, ...) log_printf("%s: " fmt, __FUNCTION__, __VA_ARGS__)
-#define FAIL_ON(cond, val) \
-    if (cond) { \
+#define FAIL_ON(cond, val)         \
+    if (cond) {                    \
         log(#cond " (%08X)", val); \
-        return -29; \
+        return -29;                \
     }
 
 int _MCP_LoadFile_patch(ipcmessage *msg) {
@@ -56,10 +56,10 @@ int _MCP_LoadFile_patch(ipcmessage *msg) {
     //DEBUG_FUNCTION_LINE("msg->ioctl.buffer_io = %p, msg->ioctl.length_io = 0x%X\n", msg->ioctl.buffer_io, msg->ioctl.length_io);
     //DEBUG_FUNCTION_LINE("request->type = %d, request->pos = %d, request->name = \"%s\"\n", request->type, request->pos, request->name);
 
-    int replace_target = replace_target_device;
-    int replace_filesize = rep_filesize;
+    int replace_target     = replace_target_device;
+    int replace_filesize   = rep_filesize;
     int replace_fileoffset = rep_fileoffset;
-    char *replace_path = rpxpath;
+    char *replace_path     = rpxpath;
 
     if (strlen(request->name) > 1 && request->name[strlen(request->name) - 1] == 'x') {
         if (strncmp(request->name, "safe.rpx", strlen("safe.rpx")) != 0) {
@@ -81,28 +81,28 @@ int _MCP_LoadFile_patch(ipcmessage *msg) {
         // The replacement may restart the application to execute a kernel exploit.
         // The men.rpx is hooked until the "IPC_CUSTOM_MEN_RPX_HOOK_COMPLETED" command is passed to IOCTL 0x100.
         // If the loading of the replacement file fails, the Wii U Menu is loaded normally.
-        replace_target = LOAD_FILE_TARGET_SD_CARD;
-        replace_filesize = 0; // unknown
+        replace_target     = LOAD_FILE_TARGET_SD_CARD;
+        replace_filesize   = 0; // unknown
         replace_fileoffset = 0;
     } else if (strncmp(request->name, "safe.rpx", strlen("safe.rpx")) == 0) {
         // if we don't explicitly replace files, we do want replace the Health and Safety app with the HBL
         if (request->pos == 0 && !doWantReplaceRPX) {
-            replace_path = "wiiu/apps/homebrew_launcher/homebrew_launcher.rpx";
+            replace_path   = "wiiu/apps/homebrew_launcher/homebrew_launcher.rpx";
             replace_target = LOAD_FILE_TARGET_SD_CARD;
             //doWantReplaceXML = false;
-            doWantReplaceRPX = true;
-            replace_filesize = 0; // unknown
+            doWantReplaceRPX   = true;
+            replace_filesize   = 0; // unknown
             replace_fileoffset = 0;
         }
     } else if (!doWantReplaceRPX) {
         doWantReplaceRPX = false; // Only replace it once.
-        replace_path = NULL;
+        replace_path     = NULL;
         return real_MCP_LoadFile(msg);
     }
 
     if (replace_path != NULL && strlen(replace_path) > 0) {
         doWantReplaceRPX = false; // Only replace it once.
-        int result = MCP_LoadCustomFile(replace_target, replace_path, replace_filesize, replace_fileoffset, msg->ioctl.buffer_io, msg->ioctl.length_io, request->pos);
+        int result       = MCP_LoadCustomFile(replace_target, replace_path, replace_filesize, replace_fileoffset, msg->ioctl.buffer_io, msg->ioctl.length_io, request->pos);
 
         if (result >= 0) {
             return result;
@@ -126,7 +126,7 @@ static int MCP_LoadCustomFile(int target, char *path, int filesize, int fileoffs
 
     if (target == LOAD_FILE_TARGET_SD_CARD) {
         char mountpath[] = "/vol/storage_iosu_homebrew";
-        int fsa_h = svcOpen("/dev/fsa", 0);
+        int fsa_h        = svcOpen("/dev/fsa", 0);
         FSA_Mount(fsa_h, "/dev/sdcard01", mountpath, 2, NULL, 0);
         svcClose(fsa_h);
         strncpy(filepath, mountpath, sizeof(filepath) - 1);
@@ -143,7 +143,7 @@ static int MCP_LoadCustomFile(int target, char *path, int filesize, int fileoffs
 
     /*  TODO: If this fails, try last argument as 1 */
     int bytesRead = 0;
-    int result = MCP_DoLoadFile(filepath, NULL, buffer_out, buffer_len, pos + fileoffset, &bytesRead, 0);
+    int result    = MCP_DoLoadFile(filepath, NULL, buffer_out, buffer_len, pos + fileoffset, &bytesRead, 0);
     //log("MCP_DoLoadFile returned %d, bytesRead = %d pos %d \n", result, bytesRead, pos + fileoffset);
 
     if (result >= 0) {
@@ -161,7 +161,7 @@ static int MCP_LoadCustomFile(int target, char *path, int filesize, int fileoffs
 }
 
 int _MCP_ReadCOSXml_patch(uint32_t u1, uint32_t u2, MCPPPrepareTitleInfo *xmlData) {
-    int (*const real_MCP_ReadCOSXml_patch)(uint32_t u1, uint32_t u2, MCPPPrepareTitleInfo *xmlData) = (void *) 0x050024ec + 1; //+1 for thumb
+    int (*const real_MCP_ReadCOSXml_patch)(uint32_t u1, uint32_t u2, MCPPPrepareTitleInfo * xmlData) = (void *) 0x050024ec + 1; //+1 for thumb
 
     int res = real_MCP_ReadCOSXml_patch(u1, u2, xmlData);
 
@@ -173,7 +173,7 @@ int _MCP_ReadCOSXml_patch(uint32_t u1, uint32_t u2, MCPPPrepareTitleInfo *xmlDat
     if (xmlData->titleId != 0x000500001010DC00 && // Mass Effect 3 Special Edition USA
         xmlData->titleId != 0x000500001010F500 && // Mass Effect 3 Special Edition EUR
         xmlData->titleId != 0x0005000010113000) { // Mass Effect 3 Special Edition JPN
-            
+
         // Give all titles permission to use ACP
         xmlData->permissions[10].mask = 0xFFFFFFFFFFFFFFFF;
     }
@@ -185,11 +185,11 @@ int _MCP_ReadCOSXml_patch(uint32_t u1, uint32_t u2, MCPPPrepareTitleInfo *xmlDat
             xmlData->titleId == 0x000500101004E200) {
             xmlData->codegen_size = 0x02000000;
             xmlData->codegen_core = 0x80000001;
-            xmlData->max_size = 0x40000000;
+            xmlData->max_size     = 0x40000000;
 
             // Set maximum codesize to 64 MiB
-            xmlData->max_codesize = 0x04000000;
-            xmlData->avail_size = 0;
+            xmlData->max_codesize  = 0x04000000;
+            xmlData->avail_size    = 0;
             xmlData->overlay_arena = 0;
 
             // Give us full permissions everywhere
@@ -197,9 +197,9 @@ int _MCP_ReadCOSXml_patch(uint32_t u1, uint32_t u2, MCPPPrepareTitleInfo *xmlDat
                 xmlData->permissions[i].mask = 0xFFFFFFFFFFFFFFFF;
             }
 
-            xmlData->default_stack0_size = 0;
-            xmlData->default_stack1_size = 0;
-            xmlData->default_stack2_size = 0;
+            xmlData->default_stack0_size   = 0;
+            xmlData->default_stack1_size   = 0;
+            xmlData->default_stack2_size   = 0;
             xmlData->default_redzone0_size = 0;
             xmlData->default_redzone1_size = 0;
             xmlData->default_redzone2_size = 0;
@@ -260,16 +260,16 @@ int _MCP_ioctl100_patch(ipcmessage *msg) {
                 DEBUG_FUNCTION_LINE("IPC_CUSTOM_LOAD_CUSTOM_RPX\n");
 
                 if (msg->ioctl.length_in >= 0x110) {
-                    int target = msg->ioctl.buffer_in[0x04 / 0x04];
-                    int filesize = msg->ioctl.buffer_in[0x08 / 0x04];
+                    int target     = msg->ioctl.buffer_in[0x04 / 0x04];
+                    int filesize   = msg->ioctl.buffer_in[0x08 / 0x04];
                     int fileoffset = msg->ioctl.buffer_in[0x0C / 0x04];
-                    char *str_ptr = (char *) &msg->ioctl.buffer_in[0x10 / 0x04];
+                    char *str_ptr  = (char *) &msg->ioctl.buffer_in[0x10 / 0x04];
                     memset(rpxpath, 0, sizeof(rpxpath));
 
                     strncpy(rpxpath, str_ptr, 256 - 1);
 
-                    rep_filesize = filesize;
-                    rep_fileoffset = fileoffset;
+                    rep_filesize     = filesize;
+                    rep_fileoffset   = fileoffset;
                     doWantReplaceRPX = true;
                     //doWantReplaceXML = true;
                     replace_valid = true;
@@ -309,8 +309,8 @@ int _MCP_ioctl100_patch(ipcmessage *msg) {
 
                 // Kill existing syslogs to avoid long catch up
                 uint32_t *bufferPtr = (uint32_t *) (*(uint32_t *) 0x05095ecc);
-                bufferPtr[0] = 0;
-                bufferPtr[1] = 0;
+                bufferPtr[0]        = 0;
+                bufferPtr[1]        = 0;
 
                 break;
             }

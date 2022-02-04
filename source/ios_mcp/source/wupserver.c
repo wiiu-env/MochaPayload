@@ -1,13 +1,13 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include "fsa.h"
 #include "imports.h"
+#include "ipc.h"
+#include "logger.h"
 #include "net_ifmgr_ncl.h"
 #include "socket.h"
-#include "fsa.h"
 #include "svc.h"
-#include "logger.h"
-#include "ipc.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 static int serverKilled;
 static int serverSocket;
@@ -24,84 +24,84 @@ static int serverCommandHandler(u32 *command_buffer, u32 length) {
         case 0:
             // write
             // [cmd_id][addr]
-        {
-            void *dst = (void *) command_buffer[1];
+            {
+                void *dst = (void *) command_buffer[1];
 
-            memcpy(dst, &command_buffer[2], length - 8);
-        }
+                memcpy(dst, &command_buffer[2], length - 8);
+            }
             break;
         case 1:
             // read
             // [cmd_id][addr][length]
-        {
-            void *src = (void *) command_buffer[1];
-            length = command_buffer[2];
+            {
+                void *src = (void *) command_buffer[1];
+                length    = command_buffer[2];
 
-            memcpy(&command_buffer[1], src, length);
-            out_length = length + 4;
-        }
+                memcpy(&command_buffer[1], src, length);
+                out_length = length + 4;
+            }
             break;
         case 2:
             // svc
             // [cmd_id][svc_id]
-        {
-            int svc_id = command_buffer[1];
-            int size_arguments = length - 8;
+            {
+                int svc_id         = command_buffer[1];
+                int size_arguments = length - 8;
 
-            u32 arguments[8];
-            memset(arguments, 0x00, sizeof(arguments));
-            memcpy(arguments, &command_buffer[2], (size_arguments < 8 * 4) ? size_arguments : (8 * 4));
+                u32 arguments[8];
+                memset(arguments, 0x00, sizeof(arguments));
+                memcpy(arguments, &command_buffer[2], (size_arguments < 8 * 4) ? size_arguments : (8 * 4));
 
-            // return error code as data
-            out_length = 8;
-            command_buffer[1] = ((int (*const)(u32, u32, u32, u32, u32, u32, u32, u32)) (MCP_SVC_BASE + svc_id * 8))(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4], arguments[5],
-                                                                                                                     arguments[6], arguments[7]);
-        }
+                // return error code as data
+                out_length        = 8;
+                command_buffer[1] = ((int (*const)(u32, u32, u32, u32, u32, u32, u32, u32))(MCP_SVC_BASE + svc_id * 8))(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4], arguments[5],
+                                                                                                                        arguments[6], arguments[7]);
+            }
             break;
         case 3:
             // kill
             // [cmd_id]
-        {
-            serverKilled = 1;
-            ipc_deinit();
-        }
+            {
+                serverKilled = 1;
+                ipc_deinit();
+            }
             break;
         case 4:
             // memcpy
             // [dst][src][size]
-        {
-            void *dst = (void *) command_buffer[1];
-            void *src = (void *) command_buffer[2];
-            int size = command_buffer[3];
+            {
+                void *dst = (void *) command_buffer[1];
+                void *src = (void *) command_buffer[2];
+                int size  = command_buffer[3];
 
-            memcpy(dst, src, size);
-        }
+                memcpy(dst, src, size);
+            }
             break;
         case 5:
             // repeated-write
             // [address][value][n]
-        {
-            u32 *dst = (u32 *) command_buffer[1];
-            u32 *cache_range = (u32 *) (command_buffer[1] & ~0xFF);
-            u32 value = command_buffer[2];
-            u32 n = command_buffer[3];
+            {
+                u32 *dst         = (u32 *) command_buffer[1];
+                u32 *cache_range = (u32 *) (command_buffer[1] & ~0xFF);
+                u32 value        = command_buffer[2];
+                u32 n            = command_buffer[3];
 
-            u32 old = *dst;
-            int i;
-            for (i = 0; i < n; i++) {
-                if (*dst != old) {
-                    if (*dst == 0x0) old = *dst;
-                    else {
-                        *dst = value;
-                        svcFlushDCache(cache_range, 0x100);
-                        break;
+                u32 old = *dst;
+                int i;
+                for (i = 0; i < n; i++) {
+                    if (*dst != old) {
+                        if (*dst == 0x0) old = *dst;
+                        else {
+                            *dst = value;
+                            svcFlushDCache(cache_range, 0x100);
+                            break;
+                        }
+                    } else {
+                        svcInvalidateDCache(cache_range, 0x100);
+                        usleep(50);
                     }
-                } else {
-                    svcInvalidateDCache(cache_range, 0x100);
-                    usleep(50);
                 }
             }
-        }
             break;
         default:
             // unknown command
@@ -141,8 +141,8 @@ static void serverListenClients() {
 
     memset(&server, 0x00, sizeof(server));
 
-    server.sin_family = AF_INET;
-    server.sin_port = 1337;
+    server.sin_family      = AF_INET;
+    server.sin_port        = 1337;
     server.sin_addr.s_addr = 0;
 
     if (bind(serverSocket, (struct sockaddr *) &server, sizeof(server)) < 0) {

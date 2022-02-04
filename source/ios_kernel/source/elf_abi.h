@@ -1,3 +1,4 @@
+// clang-format off
 /*
  * Copyright (c) 1995, 1996, 2001, 2002
  * Erik Theisen.  All rights reserved.
