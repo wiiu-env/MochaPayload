@@ -1,9 +1,9 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include "socket.h"
-#include "svc.h"
 #include "imports.h"
+#include "svc.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 static int socket_handle = 0;
 
@@ -41,7 +41,7 @@ static void freeIobuf(void *ptr) {
 }
 
 int socket(int domain, int type, int protocol) {
-    u8 *iobuf = allocIobuf(0xC);
+    u8 *iobuf  = allocIobuf(0xC);
     u32 *inbuf = (u32 *) iobuf;
 
     inbuf[0] = domain;
@@ -55,7 +55,7 @@ int socket(int domain, int type, int protocol) {
 }
 
 int closesocket(int sockfd) {
-    u8 *iobuf = allocIobuf(0x4);
+    u8 *iobuf  = allocIobuf(0x4);
     u32 *inbuf = (u32 *) iobuf;
 
     inbuf[0] = sockfd;
@@ -67,8 +67,8 @@ int closesocket(int sockfd) {
 }
 
 int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
-    u8 *iobuf = allocIobuf(0x18);
-    u32 *inbuf = (u32 *) iobuf;
+    u8 *iobuf   = allocIobuf(0x18);
+    u32 *inbuf  = (u32 *) iobuf;
     u32 *outbuf = (u32 *) inbuf;
 
     inbuf[0] = sockfd;
@@ -97,7 +97,7 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
 int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
     if (addrlen != 0x10) return -1;
 
-    u8 *iobuf = allocIobuf(0x18);
+    u8 *iobuf  = allocIobuf(0x18);
     u32 *inbuf = (u32 *) iobuf;
 
     inbuf[0] = sockfd;
@@ -113,7 +113,7 @@ int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
 int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
     if (addrlen != 0x10) return -1;
 
-    u8 *iobuf = allocIobuf(0x18);
+    u8 *iobuf  = allocIobuf(0x18);
     u32 *inbuf = (u32 *) iobuf;
 
     inbuf[0] = sockfd;
@@ -127,7 +127,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
 }
 
 int listen(int sockfd, int backlog) {
-    u8 *iobuf = allocIobuf(0x8);
+    u8 *iobuf  = allocIobuf(0x8);
     u32 *inbuf = (u32 *) iobuf;
 
     inbuf[0] = sockfd;
@@ -140,7 +140,7 @@ int listen(int sockfd, int backlog) {
 }
 
 int shutdown(int sockfd, int how) {
-    u8 *iobuf = allocIobuf(0x8);
+    u8 *iobuf  = allocIobuf(0x8);
     u32 *inbuf = (u32 *) iobuf;
 
     inbuf[0] = sockfd;
@@ -159,9 +159,9 @@ int recv(int sockfd, void *buf, size_t len, int flags) {
     void *data_buf = svcAllocAlign(0xCAFF, len, 0x40);
     if (!data_buf) return -100;
 
-    u8 *iobuf = allocIobuf(0x38);
+    u8 *iobuf      = allocIobuf(0x38);
     iovec_s *iovec = (iovec_s *) iobuf;
-    u32 *inbuf = (u32 *) &iobuf[0x30];
+    u32 *inbuf     = (u32 *) &iobuf[0x30];
 
     inbuf[0] = sockfd;
     inbuf[1] = flags;
@@ -189,9 +189,9 @@ int send(int sockfd, const void *buf, size_t len, int flags) {
     void *data_buf = svcAllocAlign(0xCAFF, len, 0x40);
     if (!data_buf) return -100;
 
-    u8 *iobuf = allocIobuf(0x38);
+    u8 *iobuf      = allocIobuf(0x38);
     iovec_s *iovec = (iovec_s *) iobuf;
-    u32 *inbuf = (u32 *) &iobuf[0x30];
+    u32 *inbuf     = (u32 *) &iobuf[0x30];
 
     memcpy(data_buf, buf, len);
 

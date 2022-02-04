@@ -1,12 +1,14 @@
 #ifndef FSA_H
 #define FSA_H
 
+#include "types.h"
+
 typedef struct {
     u32 flag;
     u32 permission;
     u32 owner_id;
     u32 group_id;
-    u32 size; // size in bytes
+    u32 size;     // size in bytes
     u32 physsize; // physical size on disk in bytes
     u32 unk[3];
     u32 id;
@@ -20,10 +22,10 @@ typedef struct {
     char name[0x100];
 } directoryEntry_s;
 
-#define DIR_ENTRY_IS_DIRECTORY      0x80000000
+#define DIR_ENTRY_IS_DIRECTORY   0x80000000
 
 #define FSA_MOUNTFLAGS_BINDMOUNT (1 << 0)
-#define FSA_MOUNTFLAGS_GLOBAL (1 << 1)
+#define FSA_MOUNTFLAGS_GLOBAL    (1 << 1)
 
 int FSA_Open();
 

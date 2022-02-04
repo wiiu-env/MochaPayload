@@ -21,18 +21,19 @@
  * 3. This notice may not be removed or altered from any source
  * distribution.
  ***************************************************************************/
+#include "instant_patches.h"
+#include "ios_mcp_patches.h"
 #include "types.h"
 #include "utils.h"
-#include "ios_mcp_patches.h"
-#include "instant_patches.h"
 
-#define USB_PHYS_CODE_BASE      0x101312D0
+#define USB_PHYS_CODE_BASE 0x101312D0
 
 typedef struct {
     u32 size;
     u8 data[0];
 } payload_info_t;
 
+// clang-format off
 static const char repairData_set_fault_behavior[] = {
         0xE1, 0x2F, 0xFF, 0x1E, 0xE9, 0x2D, 0x40, 0x30, 0xE5, 0x93, 0x20, 0x00, 0xE1, 0xA0, 0x40, 0x00,
         0xE5, 0x92, 0x30, 0x54, 0xE1, 0xA0, 0x50, 0x01, 0xE3, 0x53, 0x00, 0x01, 0x0A, 0x00, 0x00, 0x02,
@@ -56,11 +57,12 @@ static const char repairData_usb_root_thread[] = {
         0xE2, 0x4D, 0xDE, 0x17, 0xEB, 0x00, 0xB9, 0x92, 0xE3, 0xA0, 0x10, 0x00, 0xE3, 0xA0, 0x20, 0x03,
         0xE5, 0x9F, 0x0E, 0x68, 0xEB, 0x00, 0xB3, 0x20,
 };
+// clang-format on
 
 int _main() {
-    void (*invalidate_icache)() = (void (*)()) 0x0812DCF0;
+    void (*invalidate_icache)()                           = (void (*)()) 0x0812DCF0;
     void (*invalidate_dcache)(unsigned int, unsigned int) = (void (*)()) 0x08120164;
-    void (*flush_dcache)(unsigned int, unsigned int) = (void (*)()) 0x08120160;
+    void (*flush_dcache)(unsigned int, unsigned int)      = (void (*)()) 0x08120160;
 
     flush_dcache(0x081200F0, 0x4001); // giving a size >= 0x4000 flushes all cache
 

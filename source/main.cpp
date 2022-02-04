@@ -1,7 +1,7 @@
-#include <cstring>
-#include <cstdio>
 #include <coreinit/cache.h>
 #include <coreinit/ios.h>
+#include <cstdio>
+#include <cstring>
 #include <sysapp/title.h>
 
 #include <whb/log.h>
@@ -30,11 +30,11 @@ int main(int argc, char **argv) {
     // When the kernel exploit is set up successfully, we signal the ios to move on.
     int mcpFd = IOS_Open("/dev/mcp", (IOSOpenMode) 0);
     if (mcpFd >= 0) {
-        int in = IPC_CUSTOM_MEN_RPX_HOOK_COMPLETED;
+        int in  = IPC_CUSTOM_MEN_RPX_HOOK_COMPLETED;
         int out = 0;
         IOS_Ioctl(mcpFd, 100, &in, sizeof(in), &out, sizeof(out));
 
-        in = IPC_CUSTOM_START_MCP_THREAD;
+        in  = IPC_CUSTOM_START_MCP_THREAD;
         out = 0;
         IOS_Ioctl(mcpFd, 100, &in, sizeof(in), &out, sizeof(out));
         IOS_Close(mcpFd);

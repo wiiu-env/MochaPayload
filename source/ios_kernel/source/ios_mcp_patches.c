@@ -21,13 +21,13 @@
  * 3. This notice may not be removed or altered from any source
  * distribution.
  ***************************************************************************/
-#include "types.h"
-#include "elf_patcher.h"
 #include "ios_mcp_patches.h"
 #include "../../ios_mcp/ios_mcp.bin.h"
 #include "../../ios_mcp/ios_mcp_syms.h"
+#include "elf_patcher.h"
+#include "types.h"
 
-#define MCP_CODE_BASE_PHYS_ADDR     (-0x05100000 + 0x13D80000)
+#define MCP_CODE_BASE_PHYS_ADDR (-0x05100000 + 0x13D80000)
 
 extern const patch_table_t mcp_patches_table[];
 extern const patch_table_t mcp_patches_table_end[];

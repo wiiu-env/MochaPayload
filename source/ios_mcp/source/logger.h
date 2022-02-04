@@ -15,8 +15,9 @@ void log_printf(const char *format, ...);
 #define log_printf(x, ...)
 #endif
 
-#define DEBUG_FUNCTION_LINE(FMT, ARGS...)do { \
-    log_printf("[%23s]%30s@L%04d: " FMT "",__FILE__,__FUNCTION__, __LINE__, ## ARGS); \
+#define DEBUG_FUNCTION_LINE(FMT, ARGS...)                                                  \
+    do {                                                                                   \
+        log_printf("[%23s]%30s@L%04d: " FMT "", __FILE__, __FUNCTION__, __LINE__, ##ARGS); \
     } while (0)
 
 

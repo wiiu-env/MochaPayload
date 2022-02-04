@@ -1,5 +1,5 @@
-#include "wupserver.h"
 #include "ipc.h"
+#include "wupserver.h"
 
 static int threadsStarted = 0;
 

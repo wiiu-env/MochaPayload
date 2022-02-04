@@ -1,10 +1,10 @@
 #ifndef TYPES_H
 #define TYPES_H
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
-#define U64_MAX    UINT64_MAX
+#define U64_MAX UINT64_MAX
 
 typedef uint8_t u8;
 typedef uint16_t u16;

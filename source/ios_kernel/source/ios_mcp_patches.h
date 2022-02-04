@@ -24,7 +24,9 @@
 #ifndef _MCP_PATCHES_H_
 #define _MCP_PATCHES_H_
 
-#define MCP_LAUNCH_IMG_PHYS_ADDR    (0x27000000)
+#include "types.h"
+
+#define MCP_LAUNCH_IMG_PHYS_ADDR (0x27000000)
 
 u32 mcp_get_phys_code_base(void);
 

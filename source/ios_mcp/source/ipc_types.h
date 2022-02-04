@@ -3,21 +3,21 @@
 
 #include "types.h"
 
-#define IOS_COMMAND_INVALID     0x00
-#define IOS_OPEN                0x01
-#define IOS_CLOSE               0x02
-#define IOS_READ                0x03
-#define IOS_WRITE               0x04
-#define IOS_SEEK                0x05
-#define IOS_IOCTL               0x06
-#define IOS_IOCTLV              0x07
-#define IOS_REPLY               0x08
-#define IOS_IPC_MSG0            0x09
-#define IOS_IPC_MSG1            0x0A
-#define IOS_IPC_MSG2            0x0B
-#define IOS_SUSPEND             0x0C
-#define IOS_RESUME              0x0D
-#define IOS_SVCMSG              0x0E
+#define IOS_COMMAND_INVALID 0x00
+#define IOS_OPEN            0x01
+#define IOS_CLOSE           0x02
+#define IOS_READ            0x03
+#define IOS_WRITE           0x04
+#define IOS_SEEK            0x05
+#define IOS_IOCTL           0x06
+#define IOS_IOCTLV          0x07
+#define IOS_REPLY           0x08
+#define IOS_IPC_MSG0        0x09
+#define IOS_IPC_MSG1        0x0A
+#define IOS_IPC_MSG2        0x0B
+#define IOS_SUSPEND         0x0C
+#define IOS_RESUME          0x0D
+#define IOS_SVCMSG          0x0E
 
 
 /* IPC message */

@@ -21,12 +21,12 @@
  * 3. This notice may not be removed or altered from any source
  * distribution.
  ***************************************************************************/
-#include "utils.h"
-#include "types.h"
-#include "elf_patcher.h"
-#include "kernel_patches.h"
-#include "ios_mcp_patches.h"
 #include "../../ios_mcp/ios_mcp_syms.h"
+#include "elf_patcher.h"
+#include "ios_mcp_patches.h"
+#include "kernel_patches.h"
+#include "types.h"
+#include "utils.h"
 
 typedef struct {
     u32 paddr;
@@ -37,9 +37,9 @@ typedef struct {
     u32 cached;
 } ios_map_shared_info_t;
 
-#define mcp_rodata_phys(addr) ((u32)(addr) - 0x05060000 + 0x08220000)
-#define mcp_data_phys(addr) ((u32)(addr) - 0x05074000 + 0x08234000)
-#define acp_phys(addr) ((u32)(addr) - 0xE0000000 + 0x12900000)
+#define mcp_rodata_phys(addr) ((u32) (addr) -0x05060000 + 0x08220000)
+#define mcp_data_phys(addr)   ((u32) (addr) -0x05074000 + 0x08234000)
+#define acp_phys(addr)        ((u32) (addr) -0xE0000000 + 0x12900000)
 
 void instant_patches_setup(void) {
     // apply IOS ELF launch hook
@@ -62,13 +62,13 @@ void instant_patches_setup(void) {
     *(volatile u32 *) 0x081430B4 = 1;
 
     // fix 10 minute timeout that crashes MCP after 10 minutes of booting
-    *(volatile u32 *) (0x05022474 - 0x05000000 + 0x081C0000) = 0xFFFFFFFF;    // NEW_TIMEOUT
+    *(volatile u32 *) (0x05022474 - 0x05000000 + 0x081C0000) = 0xFFFFFFFF; // NEW_TIMEOUT
 
     kernel_memset((void *) (0x050BD000 - 0x05000000 + 0x081C0000), 0, 0x2F00);
 
     // allow custom bootLogoTex and bootMovie.h264
-    *(volatile u32 *) (0xE0030D68 - 0xE0000000 + 0x12900000) = 0xE3A00000;    // mov r0, #0
-    *(volatile u32 *) (0xE0030D34 - 0xE0000000 + 0x12900000) = 0xE3A00000;    // mov r0, #0
+    *(volatile u32 *) (0xE0030D68 - 0xE0000000 + 0x12900000) = 0xE3A00000; // mov r0, #0
+    *(volatile u32 *) (0xE0030D34 - 0xE0000000 + 0x12900000) = 0xE3A00000; // mov r0, #0
 
     // Patch update check
     *(volatile u32 *) (0xe22830e0 - 0xe2280000 + 0x13140000) = 0x00000000;
@@ -76,9 +76,9 @@ void instant_patches_setup(void) {
     *(volatile u32 *) (0xe204fb68 - 0xe2000000 + 0x12EC0000) = 0xe3a00000;
 
     // allow any region title launch
-    *(volatile u32 *) (0xE0030498 - 0xE0000000 + 0x12900000) = 0xE3A00000;    // mov r0, #0
+    *(volatile u32 *) (0xE0030498 - 0xE0000000 + 0x12900000) = 0xE3A00000; // mov r0, #0
     // Patch CheckTitleLaunch to ignore gamepad connected result
-    *(volatile u32 *) (0xE0030868 - 0xE0000000 + 0x12900000) = 0xE3A00000;    // mov r0, #0
+    *(volatile u32 *) (0xE0030868 - 0xE0000000 + 0x12900000) = 0xE3A00000; // mov r0, #0
 
     *(volatile u32 *) (0x050254D6 - 0x05000000 + 0x081C0000) = THUMB_BL(0x050254D6, MCP_LoadFile_patch);
     *(volatile u32 *) (0x05025242 - 0x05000000 + 0x081C0000) = THUMB_BL(0x05025242, MCP_ioctl100_patch);
@@ -110,19 +110,19 @@ void instant_patches_setup(void) {
     *(volatile u32 *) (0x050BC580 - 0x05000000 + 0x081C0000) = 0;
 
     ios_map_shared_info_t map_info;
-    map_info.paddr = 0x050BD000 - 0x05000000 + 0x081C0000;
-    map_info.vaddr = 0x050BD000;
-    map_info.size = 0x3000;
-    map_info.domain = 1;            // MCP
-    map_info.type = 3;              // 0 = undefined, 1 = kernel only, 2 = read only, 3 = read/write
+    map_info.paddr  = 0x050BD000 - 0x05000000 + 0x081C0000;
+    map_info.vaddr  = 0x050BD000;
+    map_info.size   = 0x3000;
+    map_info.domain = 1; // MCP
+    map_info.type   = 3; // 0 = undefined, 1 = kernel only, 2 = read only, 3 = read/write
     map_info.cached = 0xFFFFFFFF;
-    _iosMapSharedUserExecution(&map_info);  // actually a bss section but oh well it will have read/write
+    _iosMapSharedUserExecution(&map_info); // actually a bss section but oh well it will have read/write
 
-    map_info.paddr = 0x05116000 - 0x05100000 + 0x13D80000;
-    map_info.vaddr = 0x05116000;
-    map_info.size = 0x4000;
-    map_info.domain = 1;            // MCP
-    map_info.type = 3;              // 0 = undefined, 1 = kernel only, 2 = read only, 3 = read write
+    map_info.paddr  = 0x05116000 - 0x05100000 + 0x13D80000;
+    map_info.vaddr  = 0x05116000;
+    map_info.size   = 0x4000;
+    map_info.domain = 1; // MCP
+    map_info.type   = 3; // 0 = undefined, 1 = kernel only, 2 = read only, 3 = read write
     map_info.cached = 0xFFFFFFFF;
     _iosMapSharedUserExecution(&map_info);
 }
