@@ -117,46 +117,50 @@ int _MCP_LoadFile_patch(ipcmessage *msg) {
 
 // Set filesize to 0 if unknown.
 static int MCP_LoadCustomFile(int target, char *path, int filesize, int fileoffset, void *buffer_out, int buffer_len, int pos) {
-    if (path == NULL) {
+    if (path == NULL || (filesize > 0 && (pos > filesize))) {
         return 0;
     }
+
     char filepath[256];
     memset(filepath, 0, sizeof(filepath));
     strncpy(filepath, path, sizeof(filepath) - 1);
 
+    char mountpath[] = "/vol/storage_iosu_homebrew";
+
     if (target == LOAD_FILE_TARGET_SD_CARD) {
-        char mountpath[] = "/vol/storage_iosu_homebrew";
-        int fsa_h        = svcOpen("/dev/fsa", 0);
-        FSA_Mount(fsa_h, "/dev/sdcard01", mountpath, 2, NULL, 0);
+        int fsa_h     = svcOpen("/dev/fsa", 0);
+        int mount_res = FSA_Mount(fsa_h, "/dev/sdcard01", mountpath, 2, NULL, 0);
         svcClose(fsa_h);
+
         strncpy(filepath, mountpath, sizeof(filepath) - 1);
         strncat(filepath, "/", (sizeof(filepath) - 1) - strlen(filepath));
         strncat(filepath, path, (sizeof(filepath) - 1) - strlen(filepath));
     }
 
-
     DEBUG_FUNCTION_LINE("Load custom path \"%s\"\n", filepath);
 
-    if (filesize > 0 && (pos > filesize)) {
-        return 0;
-    }
-
-    /*  TODO: If this fails, try last argument as 1 */
     int bytesRead = 0;
     int result    = MCP_DoLoadFile(filepath, NULL, buffer_out, buffer_len, pos + fileoffset, &bytesRead, 0);
     //log("MCP_DoLoadFile returned %d, bytesRead = %d pos %d \n", result, bytesRead, pos + fileoffset);
 
     if (result >= 0) {
-        if (!bytesRead) {
-            return 0;
-        }
-        if (result >= 0) {
+        if (bytesRead <= 0) {
+            result = 0;
+        } else {
             if (filesize > 0 && (bytesRead + pos > filesize)) {
-                return filesize - pos;
+                result = filesize - pos;
+            } else {
+                result = bytesRead;
             }
-            return bytesRead;
         }
     }
+
+    if (result < 0x400000 && target == LOAD_FILE_TARGET_SD_CARD) {
+        int fsa_h       = svcOpen("/dev/fsa", 0);
+        int unmount_res = FSA_Unmount(fsa_h, mountpath, 0x80000002);
+        svcClose(fsa_h);
+    }
+
     return result;
 }
 
