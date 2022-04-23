@@ -15,7 +15,7 @@ LINK = arm-none-eabi-gcc
 AS = arm-none-eabi-as
 OBJCOPY = arm-none-eabi-objcopy
 OBJDUMP = arm-none-eabi-objdump
-CFLAGS += -Wall -mbig-endian -std=gnu11 -mcpu=arm926ej-s -msoft-float -mfloat-abi=soft -Os -ffunction-sections
+CFLAGS += -Wall -mbig-endian -std=gnu11 -mcpu=arm926ej-s -msoft-float -mfloat-abi=soft -Os -ffunction-sections -flto
 LDFLAGS += -nostartfiles -nodefaultlibs -mbig-endian -Wl,-T,link.ld
 LIBS += -lgcc
 
