@@ -26,4 +26,4 @@ SECTIONS
 	}
 }
 
-ASSERT((SIZEOF(.text) + SIZEOF(.rodata) + SIZEOF(.data)  + SIZEOF(.bss)) < 0x4200, "elf is too big");
+ASSERT((SIZEOF(.text) + SIZEOF(.rodata) + SIZEOF(.data)  + SIZEOF(.bss)) < 0x4200, "kernel's .elf is too big");

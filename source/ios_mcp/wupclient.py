@@ -216,6 +216,16 @@ class wupclient:
         (ret, data) = self.ioctl(handle, 0x0E, inbuffer, 0x293)
         return (ret, struct.unpack(">I", data[4:8])[0])
 
+    def FSA_OpenFileEx(self, handle, path, mode, flags, createMode, createAllocSize):
+        inbuffer = buffer(0x520)
+        copy_string(inbuffer, path, 0x4)
+        copy_string(inbuffer, mode, 0x284)
+        copy_word(inbuffer, flags, 0x294)
+        copy_word(inbuffer, createMode, 0x298)
+        copy_word(inbuffer, createAllocSize, 0x29C)
+        (ret, data) = self.ioctl(handle, 0x0E, inbuffer, 0x293)
+        return (ret, struct.unpack(">I", data[4:8])[0])
+
     def FSA_MakeDir(self, handle, path, flags):
         inbuffer = buffer(0x520)
         copy_string(inbuffer, path, 0x4)
@@ -258,8 +268,71 @@ class wupclient:
     def FSA_GetStatFile(self, handle, file_handle):
         inbuffer = buffer(0x520)
         copy_word(inbuffer, file_handle, 0x4)
-        (ret, data) = self.ioctl(handle, 0x14, inbuffer, 0x64)
-        return (ret, struct.unpack(">IIIIIIIIIIIIIIIIIIIIIIIII", data))
+        (ret, data) = self.ioctl(handle, 0x14, inbuffer, 0x64+0x04)
+        return (ret, struct.unpack(">IIIIIIIQIQQ48s", data))
+    
+    def FSA_GetStat(self, handle, path):
+        inbuffer = buffer(0x520)
+        copy_string(inbuffer, path, 0x4)
+        copy_word(inbuffer, 5, 0x284)
+        (ret, data) = self.ioctl(handle, 0x18, inbuffer, 0x64+0x04)
+        return (ret, struct.unpack(">IIIIIIIQIQQ48s", data))
+    
+    def FSA_GetFreeSpaceSize(self, handle, device_path):
+        inbuffer = buffer(0x520)
+        copy_string(inbuffer, device_path, 0x4)
+        copy_word(inbuffer, 0, 0x284)
+        (ret, data) = self.ioctl(handle, 0x18, inbuffer, 0x8+0x04)
+        return (ret, struct.unpack(">IQ", data))
+
+    def FSA_GetDirSize(self, handle, path):
+        inbuffer = buffer(0x520)
+        copy_string(inbuffer, path, 0x4)
+        copy_word(inbuffer, 1, 0x284)
+        (ret, data) = self.ioctl(handle, 0x18, inbuffer, 0x8+0x04)
+        return (ret, struct.unpack(">IQ", data))
+    
+    def FSA_GetEntryNum(self, handle, path):
+        inbuffer = buffer(0x520)
+        copy_string(inbuffer, path, 0x4)
+        copy_word(inbuffer, 2, 0x284)
+        (ret, data) = self.ioctl(handle, 0x18, inbuffer, 0x4+0x04)
+        return (ret, struct.unpack(">II", data))
+
+    def FSA_GetFileSystemInfo(self, handle, device_path):
+        inbuffer = buffer(0x520)
+        copy_string(inbuffer, device_path, 0x4)
+        copy_word(inbuffer, 3, 0x284)
+        (ret, data) = self.ioctl(handle, 0x18, inbuffer, 0x1E+0x04)
+        return (ret, struct.unpack(">I30s", data))
+
+    def FSA_GetDeviceInfo(self, handle, device_path):
+        inbuffer = buffer(0x520)
+        copy_string(inbuffer, device_path, 0x4)
+        copy_word(inbuffer, 4, 0x284)
+        (ret, data) = self.ioctl(handle, 0x18, inbuffer, 0x28+0x04)
+        return (ret, struct.unpack(">I8sQI20s", data))
+
+    def FSA_GetBadBlockInfo(self, handle, path):
+        inbuffer = buffer(0x520)
+        copy_string(inbuffer, path, 0x4)
+        copy_word(inbuffer, 6, 0x284)
+        (ret, data) = self.ioctl(handle, 0x18, inbuffer, 0x14+0x04)
+        return (ret, struct.unpack(">IQQI", data))
+
+    def FSA_GetJournalFreeSpace(self, handle, device_path):
+        inbuffer = buffer(0x520)
+        copy_string(inbuffer, device_path, 0x4)
+        copy_word(inbuffer, 7, 0x284)
+        (ret, data) = self.ioctl(handle, 0x18, inbuffer, 0x8+0x04)
+        return (ret, struct.unpack(">IQ", data))
+
+    def FSA_GetFragmentBlockInfo(self, handle, path):
+        inbuffer = buffer(0x520)
+        copy_string(inbuffer, path, 0x4)
+        copy_word(inbuffer, 8, 0x284)
+        (ret, data) = self.ioctl(handle, 0x18, inbuffer, 0x14+0x04)
+        return (ret, struct.unpack(">IQQI", data))
 
     def FSA_CloseFile(self, handle, file_handle):
         inbuffer = buffer(0x520)
@@ -538,7 +611,7 @@ class wupclient:
             k += cur_size
         ret = self.FSA_CloseFile(fsa_handle, file_handle)
 
-    def stat(self, filename):
+    def fstat(self, filename):
         fsa_handle = self.get_fsa_handle()
         if filename[0] != "/":
             filename = self.cwd + "/" + filename
@@ -555,7 +628,33 @@ class wupclient:
             print("owner: " + hex(stats[3]))
             print("group: " + hex(stats[4]))
             print("size: " + hex(stats[5]))
+            print("allocSize: " + hex(stats[6]))
+            print("quotaSize: " + hex(stats[7]))
+            print("entryId: " + hex(stats[8]))
+            print("created: " + hex(stats[9]))
+            print("modified: " + hex(stats[10]))
+            print("attributes: " + stats[11].hex())
         ret = self.FSA_CloseFile(fsa_handle, file_handle)
+    
+    def stat(self, path):
+        fsa_handle = self.get_fsa_handle()
+        if path[0] != "/":
+            path = self.cwd + "/" + path
+        (ret, stats) = self.FSA_GetStat(fsa_handle, path)
+        if ret != 0x0:
+            print("stat error : " + hex(ret))
+        else:
+            print("flags: " + hex(stats[1]))
+            print("mode: " + hex(stats[2]))
+            print("owner: " + hex(stats[3]))
+            print("group: " + hex(stats[4]))
+            print("size: " + hex(stats[5]))
+            print("allocSize: " + hex(stats[6]))
+            print("quotaSize: " + hex(stats[7]))
+            print("entryId: " + hex(stats[8]))
+            print("created: " + hex(stats[9]))
+            print("modified: " + hex(stats[10]))
+            print("attributes: " + stats[11].hex())
 
     def up(self, local_filename, filename = None):
         fsa_handle = self.get_fsa_handle()
@@ -742,15 +841,46 @@ def read_and_print(adr, size):
 
 if __name__ == '__main__':
     w = wupclient()
-    # mount_sd()
-    # mount_odd_content()
 
-    # w.up("/media/harddisk1/loadiine_code/homebrew_launcher_rpx/homebrew_launcher.rpx", "homebrew_launcher_rpx.rpx")
-    # w.up("/media/harddisk1/gx2sploit/gx2sploit.rpx", "homebrew_launcher_rpx.rpx")
-    # print(w.pwd())
-    # w.ls()
-    w.dump_syslog()
-    # w.mkdir("/vol/storage_sdcard/usr", 0x600)
-    # install_title("install", 1)
-    # get_nim_status()
-    # w.kill()
+    fsa_handle = w.get_fsa_handle()
+
+    (ret, stats) = w.FSA_GetDirSize(fsa_handle, "/vol/storage_mlc01/usr/title/00050000/101bff00/meta/meta.xml")
+    print("FSA_GetDirSize (ret "+hex(ret)+"): "+hex(stats[1]))
+
+    (ret, stats) = w.FSA_GetFreeSpaceSize(fsa_handle, "/vol/storage_mlc01/")
+    print("FSA_GetFreeSpaceSize (ret "+hex(ret)+"): "+hex(stats[1]))
+
+    (ret, stats) = w.FSA_GetJournalFreeSpace(fsa_handle, "/vol/storage_mlc01/")
+    print("FSA_GetJournalFreeSpace (ret "+hex(ret)+"): "+hex(stats[1]))
+
+    (ret, stats) = w.FSA_GetEntryNum(fsa_handle, "/vol/storage_mlc01/")
+    print("FSA_GetEntryNum (ret "+hex(ret)+"): "+hex(stats[1]))
+
+    (ret, stats) = w.FSA_GetFileSystemInfo(fsa_handle, "/vol/storage_mlc01/")
+    print("FSA_GetFileSystemInfo (ret "+hex(ret)+"):")
+    for i in range(1, len(stats), 1):
+        print(" "+hex(i-1)+": "+stats[i].hex())
+
+    (ret, stats) = w.FSA_GetDeviceInfo(fsa_handle, "/vol/storage_mlc01/")
+    print("FSA_GetDeviceInfo (ret "+hex(ret)+"):")
+    for i in range(1, len(stats), 1):
+        if type(stats[i]) is bytes:
+            print(" "+hex(i-1)+": "+stats[i].hex())
+        else:
+            print(" "+hex(i-1)+": "+hex(stats[i]))
+
+    (ret, stats) = w.FSA_GetBadBlockInfo(fsa_handle, "/vol/storage_mlc01/usr/title/00050000/101bff00")
+    print("FSA_GetBadBlockInfo (ret "+hex(ret)+"):")
+    for i in range(1, len(stats), 1):
+        if type(stats[i]) is bytes:
+            print(" "+hex(i-1)+": "+stats[i].hex())
+        else:
+            print(" "+hex(i-1)+": "+hex(stats[i]))
+
+    (ret, stats) = w.FSA_GetFragmentBlockInfo(fsa_handle, "/vol/storage_mlc01/")
+    print("FSA_GetFragmentBlockInfo (ret "+hex(ret)+"):")
+    for i in range(1, len(stats), 1):
+        if type(stats[i]) is bytes:
+            print(" "+hex(i-1)+": "+stats[i].hex())
+        else:
+            print(" "+hex(i-1)+": "+hex(stats[i]))

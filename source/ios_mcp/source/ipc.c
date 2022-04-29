@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define IOSUHAX_MAGIC_WORD           0x4E696365
 #define IOS_ERROR_UNKNOWN_VALUE      0xFFFFFFD6
 #define IOS_ERROR_INVALID_ARG        0xFFFFFFE3
 #define IOS_ERROR_INVALID_SIZE       0xFFFFFFE9
@@ -548,6 +549,10 @@ static int ipc_ioctl(ipcmessage *message) {
             int deviceHandle = message->ioctl.buffer_in[1];
 
             message->ioctl.buffer_io[0] = FSA_RawClose(fd, deviceHandle);
+            break;
+        }
+        case IOCTL_CHECK_IF_IOSUHAX: {
+            message->ioctl.buffer_io[0] = IOSUHAX_MAGIC_WORD;
             break;
         }
         default:

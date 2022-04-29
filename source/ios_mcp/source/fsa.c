@@ -70,6 +70,10 @@ static int _ioctl_fd_handle_internal(int fd, int ioctl_num, int num_args, int ha
 #define dispatch_ioctl_arg3(fd, ioctl_num, handle_or_path, arg1, arg2) _Generic((handle_or_path), char*: _ioctl_fd_path_internal, int: _ioctl_fd_handle_internal)(fd, ioctl_num, 3, handle_or_path, arg1, arg2, 0, NULL, 0)
 #define dispatch_ioctl_arg2(fd, ioctl_num, handle_or_path, arg1) _Generic((handle_or_path), char*: _ioctl_fd_path_internal, int: _ioctl_fd_handle_internal)(fd, ioctl_num, 2, handle_or_path, arg1, 0, 0, NULL, 0)
 #define dispatch_ioctl_arg1(fd, ioctl_num, handle_or_path) _Generic((handle_or_path), char*: _ioctl_fd_path_internal, int: _ioctl_fd_handle_internal)(fd, ioctl_num, 1, handle_or_path, 0, 0, 0, NULL, 0)
+
+#define GET_MACRO(_1,_2,_3,_4,_5,_6, MACRO_NAME, ...) MACRO_NAME
+#define dispatch_ioctl_out(fd, ioctl_num, ...) GET_MACRO(__VA_ARGS__, dispatch_ioctl_arg4_out, dispatch_ioctl_arg3_out, dispatch_ioctl_arg2_out, dispatch_ioctl_arg1_out, NULL, NULL)(fd, ioctl_num, __VA_ARGS__)
+#define dispatch_ioctl(fd, ioctl_num, ...) GET_MACRO(__VA_ARGS__,  NULL, NULL, dispatch_ioctl_arg4, dispatch_ioctl_arg3, dispatch_ioctl_arg2, dispatch_ioctl_arg1)(fd, ioctl_num, __VA_ARGS__)
 // clang-format on
 
 int FSA_Mount(int fd, char *device_path, char *volume_path, u32 flags, char *arg_string, int arg_string_len) {
@@ -99,17 +103,18 @@ int FSA_Mount(int fd, char *device_path, char *volume_path, u32 flags, char *arg
 }
 
 int FSA_Unmount(int fd, char *path, u32 flags) {
-    return dispatch_ioctl_arg2(fd, 0x02, path, flags);
+    return dispatch_ioctl(fd, 0x02, path, flags);
 }
 
 int FSA_FlushVolume(int fd, char *volume_path) {
-    return dispatch_ioctl_arg1(fd, 0x1B, volume_path);
+    return dispatch_ioctl(fd, 0x1B, volume_path);
 }
 
 int FSA_RollbackVolume(int fd, char *volume_path) {
-    return dispatch_ioctl_arg1(fd, 0x1C, volume_path);
+    return dispatch_ioctl(fd, 0x1C, volume_path);
 }
 
+// type:
 // 0 - FSA_GetFreeSpaceSize
 // 1 - FSA_GetDirSize
 // 2 - FSA_GetEntryNum
@@ -117,11 +122,8 @@ int FSA_RollbackVolume(int fd, char *volume_path) {
 // 4 - FSA_GetDeviceInfo
 // 5 - FSA_GetStat
 // 6 - FSA_GetBadBlockInfo
-// 7 - FSA_GetJournalFreeSpaceS
+// 7 - FSA_GetJournalFreeSpace
 // 8 - FSA_GetFragmentBlockInfo
-// type 4 :
-// 		0x08 : device size in sectors (u64)
-// 		0x10 : device sector size (u32)
 int FSA_GetInfo(int fd, char *device_path, int type, u32 *out_data) {
     u8 *iobuf   = allocIobuf();
     u32 *inbuf  = (u32 *) iobuf;
@@ -164,27 +166,27 @@ int FSA_GetStat(int fd, char *path, FSStat *out_data) {
 }
 
 int FSA_MakeDir(int fd, char *path, u32 flags) {
-    return dispatch_ioctl_arg2(fd, 0x07, path, flags);
+    return dispatch_ioctl(fd, 0x07, path, flags);
 }
 
 int FSA_OpenDir(int fd, char *path, int *outHandle) {
-    return dispatch_ioctl_arg1_out(fd, 0x0A, path, (u32 *) outHandle, sizeof(int));
+    return dispatch_ioctl_out(fd, 0x0A, path, (u32 *) outHandle, sizeof(int));
 }
 
 int FSA_ReadDir(int fd, int handle, FSDirectory *out_data) {
-    return dispatch_ioctl_arg1_out(fd, 0x0B, handle, (u32 *) out_data, sizeof(FSDirectory));
+    return dispatch_ioctl_out(fd, 0x0B, handle, (u32 *) out_data, sizeof(FSDirectory));
 }
 
 int FSA_RewindDir(int fd, int handle) {
-    return dispatch_ioctl_arg1(fd, 0x0C, handle);
+    return dispatch_ioctl(fd, 0x0C, handle);
 }
 
 int FSA_CloseDir(int fd, int handle) {
-    return dispatch_ioctl_arg1(fd, 0x0D, handle);
+    return dispatch_ioctl(fd, 0x0D, handle);
 }
 
 int FSA_ChangeDir(int fd, char *path) {
-    return dispatch_ioctl_arg1(fd, 0x05, path);
+    return dispatch_ioctl(fd, 0x05, path);
 }
 
 int FSA_GetCwd(int fd, char *out_data, int output_size) {
@@ -203,31 +205,31 @@ int FSA_GetCwd(int fd, char *out_data, int output_size) {
 
 
 int FSA_MakeQuota(int fd, char *path, u32 flags, u64 size) {
-    return dispatch_ioctl_arg4(fd, 0x07, path, flags, (size >> 32), (size & 0xFFFFFFFF));
+    return dispatch_ioctl(fd, 0x07, path, flags, (size >> 32), (size & 0xFFFFFFFF));
 }
 
 int FSA_FlushQuota(int fd, char *quota_path) {
-    return dispatch_ioctl_arg1(fd, 0x1E, quota_path);
+    return dispatch_ioctl(fd, 0x1E, quota_path);
 }
 
 int FSA_RollbackQuota(int fd, char *quota_path) {
-    return dispatch_ioctl_arg2(fd, 0x1F, quota_path, 0);
+    return dispatch_ioctl(fd, 0x1F, quota_path, 0);
 }
 
 int FSA_RollbackQuotaForce(int fd, char *quota_path) {
-    return dispatch_ioctl_arg2(fd, 0x1F, quota_path, 0x80000000);
+    return dispatch_ioctl(fd, 0x1F, quota_path, 0x80000000);
 }
 
 int FSA_RegisterFlushQuota(int fd, char *quota_path) {
-    return dispatch_ioctl_arg1(fd, 0x22, quota_path);
+    return dispatch_ioctl(fd, 0x22, quota_path);
 }
 
 int FSA_FlushMultiQuota(int fd, char *quota_path) {
-    return dispatch_ioctl_arg1(fd, 0x23, quota_path);
+    return dispatch_ioctl(fd, 0x23, quota_path);
 }
 
 int FSA_OpenFile(int fd, char *path, char *mode, int *outHandle) {
-    return FSA_OpenFileEx(fd, path, mode, outHandle, 0, 0x600, 0);
+    return FSA_OpenFileEx(fd, path, mode, outHandle, 0, 0, 0);
 }
 
 int FSA_OpenFileEx(int fd, char *path, char *mode, int *outHandle, u32 flags, int create_mode, u32 create_alloc_size) {
@@ -237,9 +239,9 @@ int FSA_OpenFileEx(int fd, char *path, char *mode, int *outHandle, u32 flags, in
 
     strncpy((char *) &inbuf[0x01], path, 0x27F);
     strncpy((char *) &inbuf[0xA1], mode, 0x10);
-    inbuf[0xA5] = flags;
-    inbuf[0xA6] = create_mode;
-    inbuf[0xA7] = create_alloc_size;
+    inbuf[0x294/4] = flags;
+    inbuf[0x298/4] = create_mode;
+    inbuf[0x29C/4] = create_alloc_size;
 
     int ret = svcIoctl(fd, 0x0E, inbuf, 0x520, outbuf, 0x293);
 
@@ -320,23 +322,23 @@ int FSA_AppendFileEx(int fd, u32 size, u32 cnt, int fileHandle, u32 flags) {
 
 
 int FSA_GetStatFile(int fd, int handle, FSStat *out_data) {
-    return dispatch_ioctl_arg1_out(fd, 0x14, handle, (u32 *) out_data, sizeof(FSStat));
+    return dispatch_ioctl_out(fd, 0x14, handle, (u32 *) out_data, sizeof(FSStat));
 }
 
 int FSA_CloseFile(int fd, int fileHandle) {
-    return dispatch_ioctl_arg1(fd, 0x15, fileHandle);
+    return dispatch_ioctl(fd, 0x15, fileHandle);
 }
 
 int FSA_FlushFile(int fd, int fileHandle) {
-    return dispatch_ioctl_arg1(fd, 0x17, fileHandle);
+    return dispatch_ioctl(fd, 0x17, fileHandle);
 }
 
 int FSA_TruncateFile(int fd, int fileHandle) {
-    return dispatch_ioctl_arg1(fd, 0x1A, fileHandle);
+    return dispatch_ioctl(fd, 0x1A, fileHandle);
 }
 
 int FSA_GetPosFile(int fd, int fileHandle, u32 *out_position) {
-    return dispatch_ioctl_arg1_out(fd, 0x11, fileHandle, (u32 *) out_position, sizeof(u32));
+    return dispatch_ioctl_out(fd, 0x11, fileHandle, (u32 *) out_position, sizeof(u32));
 }
 
 int FSA_SetPosFile(int fd, int fileHandle, u32 position) {
@@ -354,11 +356,11 @@ int FSA_SetPosFile(int fd, int fileHandle, u32 position) {
 }
 
 int FSA_IsEof(int fd, int fileHandle) {
-    return dispatch_ioctl_arg1(fd, 0x13, fileHandle);
+    return dispatch_ioctl(fd, 0x13, fileHandle);
 }
 
 int FSA_Remove(int fd, char *path) {
-    return dispatch_ioctl_arg1(fd, 0x08, path);
+    return dispatch_ioctl(fd, 0x08, path);
 }
 
 int FSA_Rename(int fd, char *old_path, char *new_path) {
@@ -376,11 +378,11 @@ int FSA_Rename(int fd, char *old_path, char *new_path) {
 }
 
 int FSA_ChangeMode(int fd, char *path, int mode) {
-    return dispatch_ioctl_arg3(fd, 0x20, path, mode, 0x777);
+    return dispatch_ioctl(fd, 0x20, path, mode, 0x777);
 }
 
 int FSA_ChangeModeEx(int fd, char *path, int mode, int mask) {
-    return dispatch_ioctl_arg3(fd, 0x20, path, mode, mask);
+    return dispatch_ioctl(fd, 0x20, path, mode, mask);
 }
 
 int FSA_ChangeOwner(int fd, char *path, u32 owner, u32 group) {
@@ -401,7 +403,7 @@ int FSA_ChangeOwner(int fd, char *path, u32 owner, u32 group) {
 }
 
 int FSA_RawOpen(int fd, char *device_path, int *outHandle) {
-    return dispatch_ioctl_arg1_out(fd, 0x6A, device_path, (u32 *) outHandle, sizeof(int));
+    return dispatch_ioctl_out(fd, 0x6A, device_path, (u32 *) outHandle, sizeof(int));
 }
 
 int _FSA_RawReadWrite(int fd, void *data, u32 size_bytes, u32 cnt, u64 blocks_offset, int device_handle, bool read) {
@@ -444,5 +446,5 @@ int FSA_RawWrite(int fd, void *data, u32 size_bytes, u32 cnt, u64 blocks_offset,
 }
 
 int FSA_RawClose(int fd, int device_handle) {
-    return dispatch_ioctl_arg1(fd, 0x6D, device_handle);
+    return dispatch_ioctl(fd, 0x6D, device_handle);
 }

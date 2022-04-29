@@ -4,7 +4,7 @@
 #include "types.h"
 #include <assert.h>
 
-typedef struct __attribute__((__packed__)) FSStat {
+typedef struct FSStat {
    u32 flags;
    u32 mode;
    u32 owner;
@@ -16,7 +16,7 @@ typedef struct __attribute__((__packed__)) FSStat {
    u64 created;
    u64 modified;
    u8 attributes[48];
-} FSStat;
+} __attribute__((__packed__)) FSStat;
 static_assert(sizeof(FSStat) == 0x64);
 
 typedef struct FSDirectory {
@@ -28,10 +28,15 @@ static_assert(sizeof(FSDirectory) == 0x164);
 typedef struct {
     u8 unknown[0x1E];
 } FSFileSystemInfo;
+static_assert(sizeof(FSFileSystemInfo) == 0x1E);
 
 typedef struct {
-    u8 unknown[0x28];
-} FSDeviceInfo;
+    u8 unknown1[0x8];
+    u64 deviceSizeInSectors;
+    u32 deviceSectorSize;
+    u8 unknown2[0x14];
+} __attribute__((packed)) FSDeviceInfo;
+static_assert(sizeof(FSDeviceInfo) == 0x28);
 
 typedef struct {
     u64 blocks_count;
