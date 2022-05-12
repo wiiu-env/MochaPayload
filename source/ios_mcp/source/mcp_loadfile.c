@@ -28,6 +28,7 @@ int (*const MCP_DoLoadFile)(const char *path, const char *path2, void *outputBuf
 
 static int MCP_LoadCustomFile(int target, char *path, int filesize, int fileoffset, void *out_buffer, int buffer_len, int pos);
 
+static bool usbLoggingEnabled     = false;
 static bool replace_valid         = false;
 static bool skipPPCSetup          = false;
 static bool doWantReplaceRPX      = false;
@@ -295,7 +296,7 @@ int _MCP_ioctl100_patch(ipcmessage *msg) {
                 }
             }
             case IPC_CUSTOM_START_USB_LOGGING: {
-                if (*((uint32_t *) 0x050290dc) == 0x42424242) {
+                if (usbLoggingEnabled || *((uint32_t *) 0x050290dc) == 0x42424242) {
                     // Skip syslog after a reload
                     break;
                 }
@@ -315,6 +316,8 @@ int _MCP_ioctl100_patch(ipcmessage *msg) {
                 uint32_t *bufferPtr = (uint32_t *) (*(uint32_t *) 0x05095ecc);
                 bufferPtr[0]        = 0;
                 bufferPtr[1]        = 0;
+
+                usbLoggingEnabled = true;
 
                 break;
             }
