@@ -46,11 +46,11 @@ static int _ioctl_fd_handle_internal(int fd, int ioctl_num, int num_args, int ha
 
     switch (num_args) {
         case 4:
-            inbuf[0x28C / 4] = arg3;
+            inbuf[0x04] = arg3;
         case 3:
-            inbuf[0x288 / 4] = arg2;
+            inbuf[0x03] = arg2;
         case 2:
-            inbuf[0x284 / 4] = arg1;
+            inbuf[0x02] = arg1;
         case 1:
             inbuf[0x01] = handle;
     }
@@ -259,6 +259,12 @@ int FSA_GetStatFile(int fd, int handle, FSStat *out_data) {
 int FSA_CloseFile(int fd, int fileHandle) {
     return dispatch_ioctl(fd, 0x15, fileHandle);
 }
+
+// Checked
+int FSA_SetPosFile(int fd, int fileHandle, u32 position) {
+    return _ioctl_fd_handle_internal(fd, 0x12, fileHandle, position);
+}
+
 int FSA_RollbackVolume(int fd, char *volume_path) {
     return dispatch_ioctl(fd, 0x1C, volume_path);
 }
@@ -359,20 +365,6 @@ int FSA_TruncateFile(int fd, int fileHandle) {
 
 int FSA_GetPosFile(int fd, int fileHandle, u32 *out_position) {
     return dispatch_ioctl_out(fd, 0x11, fileHandle, (u32 *) out_position, sizeof(u32));
-}
-
-int FSA_SetPosFile(int fd, int fileHandle, u32 position) {
-    u8 *iobuf   = allocIobuf();
-    u32 *inbuf  = (u32 *) iobuf;
-    u32 *outbuf = (u32 *) &iobuf[0x520];
-
-    inbuf[1] = fileHandle;
-    inbuf[2] = position;
-
-    int ret = svcIoctl(fd, 0x12, inbuf, 0x520, outbuf, 0x293);
-
-    freeIobuf(iobuf);
-    return ret;
 }
 
 int FSA_IsEof(int fd, int fileHandle) {
