@@ -194,11 +194,6 @@ int FSA_Unmount(int fd, char *path, u32 flags) {
     return dispatch_ioctl(fd, 0x02, path, flags);
 }
 
-//CHECKED
-int FSA_FlushVolume(int fd, char *volume_path) {
-    return dispatch_ioctl(fd, 0x1B, volume_path);
-}
-
 // type:
 // 0 - FSA_GetFreeSpaceSize
 // 1 - FSA_GetDirSize
@@ -347,6 +342,11 @@ int FSA_RawClose(int fd, int device_handle) {
 // Checked
 int FSA_ChangeMode(int fd, char *path, int mode) {
     return dispatch_ioctl(fd, 0x20, path, mode, 0x777);
+}
+
+//CHECKED
+int FSA_FlushVolume(int fd, char *volume_path) {
+    return dispatch_ioctl(fd, 0x1B, volume_path);
 }
 
 int FSA_RollbackVolume(int fd, char *volume_path) {
