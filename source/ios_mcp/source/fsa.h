@@ -71,6 +71,8 @@ int FSA_MakeQuota(int fd, char *path, u32 flags, u64 size);
 int FSA_FlushQuota(int fd, char *quota_path);
 int FSA_RollbackQuota(int fd, char *quota_path);
 int FSA_RollbackQuotaForce(int fd, char *quota_path);
+int FSA_RegisterFlushQuota(int fd, char *quota_path);
+int FSA_FlushMultiQuota(int fd, char *quota_path);
 
 int FSA_OpenFile(int fd, char *path, char *mode, int *outHandle);
 int FSA_OpenFileEx(int fd, char *path, char *mode, u32 flags, int create_mode, u32 create_alloc_size, int *outHandle);

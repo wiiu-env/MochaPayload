@@ -94,6 +94,8 @@
 #define IOCTL_FSA_ROLLBACKQUOTA      0x6A
 #define IOCTL_FSA_ROLLBACKQUOTAFORCE 0x6B
 #define IOCTL_FSA_CHANGEMODEEX       0x6C
+#define IOCTL_FSA_REGISTERFLUSHQUOTA 0x6D
+#define IOCTL_FSA_FLUSHMULTIQUOTA    0x6E
 
 // Old bindings that are now renamed
 #define IOCTL_FSA_GETDEVICEINFO      IOCTL_FSA_GETINFO
@@ -554,6 +556,20 @@ static int ipc_ioctl(ipcmessage *message) {
             int mask   = message->ioctl.buffer_in[3];
 
             message->ioctl.buffer_io[0] = FSA_ChangeModeEx(fd, path, mode, mask);
+            break;
+        }
+        case IOCTL_FSA_REGISTERFLUSHQUOTA: {
+            int fd     = message->ioctl.buffer_in[0];
+            char *path = ((char *) message->ioctl.buffer_in) + message->ioctl.buffer_in[1];
+
+            message->ioctl.buffer_io[0] = FSA_RegisterFlushQuota(fd, path);
+            break;
+        }
+        case IOCTL_FSA_FLUSHMULTIQUOTA: {
+            int fd     = message->ioctl.buffer_in[0];
+            char *path = ((char *) message->ioctl.buffer_in) + message->ioctl.buffer_in[1];
+
+            message->ioctl.buffer_io[0] = FSA_FlushMultiQuota(fd, path);
             break;
         }
 
