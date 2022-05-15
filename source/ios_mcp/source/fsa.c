@@ -179,7 +179,7 @@ int FSA_FlushVolume(int fd, char *volume_path) {
 // 8 - FSA_GetFragmentBlockInfo
 //CHECKED
 int FSA_GetInfo(int fd, char *device_path, int type, u32 *out_data) {
-    int size         = 0;
+    int size = 0;
     switch (type) {
         case 0:
         case 1:
@@ -261,18 +261,43 @@ int FSA_GetStat(int fd, char *path, FSStat *out_data) {
     return FSA_GetInfo(fd, path, 5, (u32 *) out_data);
 }
 
-int FSA_RollbackVolume(int fd, char *volume_path) {
-    return dispatch_ioctl(fd, 0x1C, volume_path);
+// Checked
+int FSA_Remove(int fd, char *path) {
+    return dispatch_ioctl(fd, 0x08, path);
 }
 
-
+// Checked
 int FSA_RewindDir(int fd, int handle) {
     return dispatch_ioctl(fd, 0x0C, handle);
 }
 
-
+// Checked
 int FSA_ChangeDir(int fd, char *path) {
     return dispatch_ioctl(fd, 0x05, path);
+}
+
+// Checked
+int FSA_Rename(int fd, char *old_path, char *new_path) {
+    u8 *iobuf   = allocIobuf();
+    u32 *inbuf  = (u32 *) iobuf;
+    u32 *outbuf = (u32 *) &iobuf[0x520];
+
+    strncpy((char *) &inbuf[0x01], old_path, 0x27F);
+    strncpy((char *) &inbuf[0x284 / 4], new_path, 0x27F);
+
+    int ret = svcIoctl(fd, 0x09, inbuf, 0x520, outbuf, 0x293);
+
+    freeIobuf(iobuf);
+    return ret;
+}
+
+// Checked
+int FSA_RawOpen(int fd, char *device_path, int *outHandle) {
+    return dispatch_ioctl_out(fd, 0x6A, device_path, (u32 *) outHandle, sizeof(int));
+}
+
+int FSA_RollbackVolume(int fd, char *volume_path) {
+    return dispatch_ioctl(fd, 0x1C, volume_path);
 }
 
 int FSA_GetCwd(int fd, char *out_data, int output_size) {
@@ -346,7 +371,6 @@ int FSA_AppendFileEx(int fd, u32 size, u32 cnt, int fileHandle, u32 flags) {
 }
 
 
-
 int FSA_FlushFile(int fd, int fileHandle) {
     return dispatch_ioctl(fd, 0x17, fileHandle);
 }
@@ -363,23 +387,6 @@ int FSA_IsEof(int fd, int fileHandle) {
     return dispatch_ioctl(fd, 0x13, fileHandle);
 }
 
-int FSA_Remove(int fd, char *path) {
-    return dispatch_ioctl(fd, 0x08, path);
-}
-
-int FSA_Rename(int fd, char *old_path, char *new_path) {
-    u8 *iobuf   = allocIobuf();
-    u32 *inbuf  = (u32 *) iobuf;
-    u32 *outbuf = (u32 *) &iobuf[0x520];
-
-    strncpy((char *) &inbuf[0x01], old_path, 0x27F);
-    strncpy((char *) &inbuf[0x01 + (0x280 / 4)], new_path, 0x27F);
-
-    int ret = svcIoctl(fd, 0x09, inbuf, 0x520, outbuf, 0x293);
-
-    freeIobuf(iobuf);
-    return ret;
-}
 
 int FSA_ChangeMode(int fd, char *path, int mode) {
     return dispatch_ioctl(fd, 0x20, path, mode, 0x777);
@@ -406,9 +413,6 @@ int FSA_ChangeOwner(int fd, char *path, u32 owner, u32 group) {
     return ret;
 }
 
-int FSA_RawOpen(int fd, char *device_path, int *outHandle) {
-    return dispatch_ioctl_out(fd, 0x6A, device_path, (u32 *) outHandle, sizeof(int));
-}
 
 int _FSA_RawReadWrite(int fd, void *data, u32 size_bytes, u32 cnt, u64 blocks_offset, int device_handle, bool read) {
     u8 *iobuf      = allocIobuf();
