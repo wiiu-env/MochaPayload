@@ -256,12 +256,13 @@ int FSA_SetPosFile(int fd, int fileHandle, u32 position) {
     return _ioctl_fd_handle_internal(fd, 0x12, fileHandle, position);
 }
 
-int FSA_RollbackVolume(int fd, char *volume_path) {
-    return dispatch_ioctl(fd, 0x1C, volume_path);
-}
-
+// Checked
 int FSA_GetStat(int fd, char *path, FSStat *out_data) {
     return FSA_GetInfo(fd, path, 5, (u32 *) out_data);
+}
+
+int FSA_RollbackVolume(int fd, char *volume_path) {
+    return dispatch_ioctl(fd, 0x1C, volume_path);
 }
 
 
