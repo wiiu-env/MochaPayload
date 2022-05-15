@@ -551,7 +551,7 @@ static int ipc_ioctl(ipcmessage *message) {
             int fd     = message->ioctl.buffer_in[0];
             char *path = ((char *) message->ioctl.buffer_in) + message->ioctl.buffer_in[1];
             int mode   = message->ioctl.buffer_in[2];
-            int mask   = message->ioctl.buffer_in[2];
+            int mask   = message->ioctl.buffer_in[3];
 
             message->ioctl.buffer_io[0] = FSA_ChangeModeEx(fd, path, mode, mask);
             break;
