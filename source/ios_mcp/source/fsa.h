@@ -73,7 +73,7 @@ int FSA_RollbackQuota(int fd, char *quota_path);
 int FSA_RollbackQuotaForce(int fd, char *quota_path);
 
 int FSA_OpenFile(int fd, char *path, char *mode, int *outHandle);
-int FSA_OpenFileEx(int fd, char *path, char *mode, int *outHandle, u32 flags, int create_mode, u32 create_alloc_size);
+int FSA_OpenFileEx(int fd, char *path, char *mode, u32 flags, int create_mode, u32 create_alloc_size, int *outHandle);
 int FSA_ReadFile(int fd, void *data, u32 size, u32 cnt, int fileHandle, u32 flags);
 int FSA_WriteFile(int fd, void *data, u32 size, u32 cnt, int fileHandle, u32 flags);
 int FSA_ReadFileWithPos(int fd, void *data, u32 size, u32 cnt, u32 position, int fileHandle, u32 flags);
