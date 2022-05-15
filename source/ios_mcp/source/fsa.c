@@ -339,6 +339,15 @@ int FSA_RawWrite(int fd, void *data, u32 size_bytes, u32 cnt, u64 blocks_offset,
     return _FSA_RawReadWrite(fd, data, size_bytes, cnt, blocks_offset, device_handle, false);
 }
 
+// Checked
+int FSA_RawClose(int fd, int device_handle) {
+    return dispatch_ioctl(fd, 0x6D, device_handle);
+}
+
+// Checked
+int FSA_ChangeMode(int fd, char *path, int mode) {
+    return dispatch_ioctl(fd, 0x20, path, mode, 0x777);
+}
 
 int FSA_RollbackVolume(int fd, char *volume_path) {
     return dispatch_ioctl(fd, 0x1C, volume_path);
@@ -431,15 +440,6 @@ int FSA_IsEof(int fd, int fileHandle) {
     return dispatch_ioctl(fd, 0x13, fileHandle);
 }
 
-
-int FSA_ChangeMode(int fd, char *path, int mode) {
-    return dispatch_ioctl(fd, 0x20, path, mode, 0x777);
-}
-
-int FSA_ChangeModeEx(int fd, char *path, int mode, int mask) {
-    return dispatch_ioctl(fd, 0x20, path, mode, mask);
-}
-
 int FSA_ChangeOwner(int fd, char *path, u32 owner, u32 group) {
     u8 *iobuf   = allocIobuf();
     u32 *inbuf  = (u32 *) iobuf;
@@ -457,6 +457,7 @@ int FSA_ChangeOwner(int fd, char *path, u32 owner, u32 group) {
     return ret;
 }
 
-int FSA_RawClose(int fd, int device_handle) {
-    return dispatch_ioctl(fd, 0x6D, device_handle);
+// Checked
+int FSA_ChangeModeEx(int fd, char *path, int mode, int mask) {
+    return dispatch_ioctl(fd, 0x20, path, mode, mask);
 }
