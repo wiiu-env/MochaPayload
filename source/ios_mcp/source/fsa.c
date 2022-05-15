@@ -361,10 +361,55 @@ int FSA_OpenFileEx(int fd, char *path, char *mode, u32 flags, int create_mode, u
     return ret;
 }
 
+// Checked
+int FSA_ReadFileWithPos(int fd, void *data, u32 size, u32 cnt, u32 position, int fileHandle, u32 flags) {
+    return _FSA_ReadWriteFileWithPos(fd, data, size, cnt, position, fileHandle, flags, true);
+}
+
+// Checked
+int FSA_WriteFileWithPos(int fd, void *data, u32 size, u32 cnt, u32 position, int fileHandle, u32 flags) {
+    return _FSA_ReadWriteFileWithPos(fd, data, size, cnt, position, fileHandle, flags, false);
+}
+
+// Checked
+int FSA_AppendFile(int fd, u32 size, u32 cnt, int fileHandle) {
+    return FSA_AppendFileEx(fd, size, cnt, fileHandle, 0);
+}
+
+// Checked
+// flags:
+//  - 1: affects the way the blocks are allocated
+//  - 2: maybe will cause it to allocate it at the end of the quota?
+int FSA_AppendFileEx(int fd, u32 size, u32 cnt, int fileHandle, u32 flags) {
+    return dispatch_ioctl(fd, 0x19, size, cnt, fileHandle, flags);
+}
+
+// Checked
+int FSA_FlushFile(int fd, int fileHandle) {
+    return dispatch_ioctl(fd, 0x17, fileHandle);
+}
+
+// Checked
+int FSA_TruncateFile(int fd, int fileHandle) {
+    return dispatch_ioctl(fd, 0x1A, fileHandle);
+}
+
+// Checked
+int FSA_GetPosFile(int fd, int fileHandle, u32 *out_position) {
+    return dispatch_ioctl_out(fd, 0x11, fileHandle, (u32 *) out_position, sizeof(u32));
+}
+
+// Checked
+int FSA_IsEof(int fd, int fileHandle) {
+    return dispatch_ioctl(fd, 0x13, fileHandle);
+}
+
+// Checked
 int FSA_RollbackVolume(int fd, char *volume_path) {
     return dispatch_ioctl(fd, 0x1C, volume_path);
 }
 
+// Checked
 int FSA_GetCwd(int fd, char *out_data, int output_size) {
     u8 *iobuf   = allocIobuf();
     u32 *inbuf  = (u32 *) iobuf;
@@ -372,13 +417,15 @@ int FSA_GetCwd(int fd, char *out_data, int output_size) {
 
     int ret = svcIoctl(fd, 0x06, inbuf, 0x520, outbuf, 0x293);
 
-    if (output_size > 0x27F) output_size = 0x27F;
-    if (out_data) strncpy(out_data, (char *) &outbuf[1], output_size);
-
+    if (output_size > 0x27F) {
+        output_size = 0x27F;
+    }
+    if (out_data) {
+        strncpy(out_data, (char *) &outbuf[1], output_size);
+    }
     freeIobuf(iobuf);
     return ret;
 }
-
 
 int FSA_MakeQuota(int fd, char *path, u32 flags, u64 size) {
     return dispatch_ioctl(fd, 0x07, path, flags, (size >> 32), (size & 0xFFFFFFFF));
@@ -404,53 +451,6 @@ int FSA_FlushMultiQuota(int fd, char *quota_path) {
     return dispatch_ioctl(fd, 0x23, quota_path);
 }
 
-int FSA_ReadFileWithPos(int fd, void *data, u32 size, u32 cnt, u32 position, int fileHandle, u32 flags) {
-    return _FSA_ReadWriteFileWithPos(fd, data, size, cnt, position, fileHandle, flags, true);
-}
-
-int FSA_WriteFileWithPos(int fd, void *data, u32 size, u32 cnt, u32 position, int fileHandle, u32 flags) {
-    return _FSA_ReadWriteFileWithPos(fd, data, size, cnt, position, fileHandle, flags, false);
-}
-
-int FSA_AppendFile(int fd, u32 size, u32 cnt, int fileHandle) {
-    return FSA_AppendFileEx(fd, size, cnt, fileHandle, 0);
-}
-
-// flags:
-//  - 1: affects the way the blocks are allocated
-//  - 2: maybe will cause it to allocate it at the end of the quota?
-int FSA_AppendFileEx(int fd, u32 size, u32 cnt, int fileHandle, u32 flags) {
-    u8 *iobuf   = allocIobuf();
-    u32 *inbuf  = (u32 *) iobuf;
-    u32 *outbuf = (u32 *) &iobuf[0x520];
-
-    inbuf[1] = size;
-    inbuf[2] = cnt;
-    inbuf[3] = fileHandle;
-    inbuf[4] = flags;
-
-    int ret = svcIoctl(fd, 0x19, inbuf, 0x520, outbuf, 0x293);
-
-    freeIobuf(iobuf);
-    return ret;
-}
-
-
-int FSA_FlushFile(int fd, int fileHandle) {
-    return dispatch_ioctl(fd, 0x17, fileHandle);
-}
-
-int FSA_TruncateFile(int fd, int fileHandle) {
-    return dispatch_ioctl(fd, 0x1A, fileHandle);
-}
-
-int FSA_GetPosFile(int fd, int fileHandle, u32 *out_position) {
-    return dispatch_ioctl_out(fd, 0x11, fileHandle, (u32 *) out_position, sizeof(u32));
-}
-
-int FSA_IsEof(int fd, int fileHandle) {
-    return dispatch_ioctl(fd, 0x13, fileHandle);
-}
 
 // Checked
 int FSA_ChangeModeEx(int fd, char *path, int mode, int mask) {
