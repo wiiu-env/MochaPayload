@@ -432,28 +432,32 @@ int FSA_MakeQuota(int fd, char *path, u32 flags, u64 size) {
     return dispatch_ioctl(fd, 0x1D, path, flags, (size >> 32), (size & 0xFFFFFFFF));
 }
 
+// Checked
 int FSA_FlushQuota(int fd, char *quota_path) {
     return dispatch_ioctl(fd, 0x1E, quota_path);
 }
 
+// Checked
 int FSA_RollbackQuota(int fd, char *quota_path) {
     return dispatch_ioctl(fd, 0x1F, quota_path, 0);
 }
 
+// Checked
 int FSA_RollbackQuotaForce(int fd, char *quota_path) {
     return dispatch_ioctl(fd, 0x1F, quota_path, 0x80000000);
 }
 
+// Checked
+int FSA_ChangeModeEx(int fd, char *path, int mode, int mask) {
+    return dispatch_ioctl(fd, 0x20, path, mode, mask);
+}
+
+// Checked
 int FSA_RegisterFlushQuota(int fd, char *quota_path) {
     return dispatch_ioctl(fd, 0x22, quota_path);
 }
 
+// Checked
 int FSA_FlushMultiQuota(int fd, char *quota_path) {
     return dispatch_ioctl(fd, 0x23, quota_path);
-}
-
-
-// Checked
-int FSA_ChangeModeEx(int fd, char *path, int mode, int mask) {
-    return dispatch_ioctl(fd, 0x20, path, mode, mask);
 }
