@@ -86,25 +86,6 @@ static int _ioctl_fd_handle_internal(int fd, int ioctl_num, int num_args, int ha
 #define dispatch_ioctl(fd, ioctl_num, ...) GET_MACRO(__VA_ARGS__,  NULL, NULL, dispatch_ioctl_arg5, dispatch_ioctl_arg4, dispatch_ioctl_arg3, dispatch_ioctl_arg2, dispatch_ioctl_arg1)(fd, ioctl_num, __VA_ARGS__)
 // clang-format on
 
-int FSA_OpenFileEx(int fd, char *path, char *mode, u32 flags, int create_mode, u32 create_alloc_size, int *outHandle) {
-    u8 *iobuf   = allocIobuf();
-    u32 *inbuf  = (u32 *) iobuf;
-    u32 *outbuf = (u32 *) &iobuf[0x520];
-
-    strncpy((char *) &inbuf[0x01], path, 0x27F);
-    strncpy((char *) &inbuf[0xA1], mode, 0x10);
-    inbuf[0x294 / 4] = flags;
-    inbuf[0x298 / 4] = create_mode;
-    inbuf[0x29C / 4] = create_alloc_size;
-
-    int ret = svcIoctl(fd, 0x0E, inbuf, 0x520, outbuf, 0x293);
-
-    if (outHandle) *outHandle = outbuf[1];
-
-    freeIobuf(iobuf);
-    return ret;
-}
-
 int _FSA_ReadWriteFileWithPos(int fd, void *data, u32 size, u32 cnt, u32 pos, int fileHandle, u32 flags, bool read) {
     u8 *iobuf      = allocIobuf();
     u32 *outbuf    = (u32 *) &iobuf[0x520];
@@ -347,7 +328,7 @@ int FSA_RawClose(int fd, int device_handle) {
 
 // Checked
 int FSA_ChangeMode(int fd, char *path, int mode) {
-    return dispatch_ioctl(fd, 0x20, path, mode, 0x777);
+    return FSA_ChangeModeEx(fd, path, mode, 0x777);
 }
 
 // Checked
@@ -358,6 +339,26 @@ int FSA_FlushVolume(int fd, char *volume_path) {
 // Checked
 int FSA_ChangeOwner(int fd, char *path, u32 owner, u32 group) {
     return dispatch_ioctl(fd, 0x70, path, 0, owner, 0, group);
+}
+
+// Checked
+int FSA_OpenFileEx(int fd, char *path, char *mode, u32 flags, int create_mode, u32 create_alloc_size, int *outHandle) {
+    u8 *iobuf   = allocIobuf();
+    u32 *inbuf  = (u32 *) iobuf;
+    u32 *outbuf = (u32 *) &iobuf[0x520];
+
+    strncpy((char *) &inbuf[0x01], path, 0x27F);
+    strncpy((char *) &inbuf[0xA1], mode, 0x10);
+    inbuf[0x294 / 4] = flags;
+    inbuf[0x298 / 4] = create_mode;
+    inbuf[0x29C / 4] = create_alloc_size;
+
+    int ret = svcIoctl(fd, 0x0E, inbuf, 0x520, outbuf, 0x293);
+
+    if (outHandle) *outHandle = outbuf[1];
+
+    freeIobuf(iobuf);
+    return ret;
 }
 
 int FSA_RollbackVolume(int fd, char *volume_path) {
@@ -450,7 +451,6 @@ int FSA_GetPosFile(int fd, int fileHandle, u32 *out_position) {
 int FSA_IsEof(int fd, int fileHandle) {
     return dispatch_ioctl(fd, 0x13, fileHandle);
 }
-
 
 // Checked
 int FSA_ChangeModeEx(int fd, char *path, int mode, int mask) {
