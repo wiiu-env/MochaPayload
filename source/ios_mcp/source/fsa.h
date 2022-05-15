@@ -4,31 +4,37 @@
 #include "types.h"
 #include <assert.h>
 
+#if defined(static_assert) || defined(__cplusplus)
+#define FSA_CHECK_SIZE(Type, Size)      \
+    static_assert(sizeof(Type) == Size, \
+                  #Type " must be " #Size " bytes")
+#endif
+
 typedef struct FSStat {
-   u32 flags;
-   u32 mode;
-   u32 owner;
-   u32 group;
-   u32 size;
-   u32 allocSize;
-   u64 quotaSize;
-   u32 entryId;
-   u64 created;
-   u64 modified;
-   u8 attributes[48];
+    u32 flags;
+    u32 mode;
+    u32 owner;
+    u32 group;
+    u32 size;
+    u32 allocSize;
+    u64 quotaSize;
+    u32 entryId;
+    u64 created;
+    u64 modified;
+    u8 attributes[48];
 } __attribute__((__packed__)) FSStat;
-static_assert(sizeof(FSStat) == 0x64);
+FSA_CHECK_SIZE(FSStat, 0x64);
 
 typedef struct FSDirectory {
-   FSStat info;
-   char name[256];
+    FSStat info;
+    char name[256];
 } FSDirectory;
-static_assert(sizeof(FSDirectory) == 0x164);
+FSA_CHECK_SIZE(FSDirectory, 0x164);
 
 typedef struct {
     u8 unknown[0x1E];
 } FSFileSystemInfo;
-static_assert(sizeof(FSFileSystemInfo) == 0x1E);
+FSA_CHECK_SIZE(FSFileSystemInfo, 0x1E);
 
 typedef struct {
     u8 unknown1[0x8];
@@ -36,13 +42,14 @@ typedef struct {
     u32 deviceSectorSize;
     u8 unknown2[0x14];
 } __attribute__((packed)) FSDeviceInfo;
-static_assert(sizeof(FSDeviceInfo) == 0x28);
+FSA_CHECK_SIZE(FSDeviceInfo, 0x28);
 
 typedef struct {
     u64 blocks_count;
     u64 some_count;
     u32 block_size;
-} FSBlockInfo;
+} __attribute__((packed))  FSBlockInfo;
+FSA_CHECK_SIZE(FSBlockInfo, 0x14);
 
 int FSA_Mount(int fd, char *device_path, char *volume_path, u32 flags, char *arg_string, int arg_string_len);
 int FSA_Unmount(int fd, char *path, u32 flags);
