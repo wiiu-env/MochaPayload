@@ -330,7 +330,7 @@ static int ipc_ioctl(ipcmessage *message) {
             int fd            = message->ioctl.buffer_in[0];
             char *device_path = ((char *) message->ioctl.buffer_in) + message->ioctl.buffer_in[1];
 
-            message->ioctl.buffer_io[0] = FSA_GetStat(fd, device_path, (FSStat *) message->ioctl.buffer_io + 1);
+            message->ioctl.buffer_io[0] = FSA_GetStat(fd, device_path, (FSStat *) (message->ioctl.buffer_io + 1));
             break;
         }
         case IOCTL_FSA_REMOVE: {
