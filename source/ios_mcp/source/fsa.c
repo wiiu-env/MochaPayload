@@ -450,7 +450,6 @@ int FSA_IsEof(int fd, int fileHandle) {
 }
 
 
-
 // Checked
 int FSA_ChangeModeEx(int fd, char *path, int mode, int mask) {
     return dispatch_ioctl(fd, 0x20, path, mode, mask);

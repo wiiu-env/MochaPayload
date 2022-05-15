@@ -48,7 +48,7 @@ typedef struct {
     u64 blocks_count;
     u64 some_count;
     u32 block_size;
-} __attribute__((packed))  FSBlockInfo;
+} __attribute__((packed)) FSBlockInfo;
 FSA_CHECK_SIZE(FSBlockInfo, 0x14);
 
 int FSA_Mount(int fd, char *device_path, char *volume_path, u32 flags, char *arg_string, int arg_string_len);
