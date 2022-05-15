@@ -41,12 +41,14 @@ static int _ioctl_fd_path_internal(int fd, int ioctl_num, int num_args, char *pa
     return ret;
 }
 
-static int _ioctl_fd_handle_internal(int fd, int ioctl_num, int num_args, int handle, u32 arg1, u32 arg2, u32 arg3, u32 *out_data, u32 out_data_size) {
+static int _ioctl_fd_handle_internal(int fd, int ioctl_num, int num_args, int handle, u32 arg1, u32 arg2, u32 arg3, u32 arg4, u32 *out_data, u32 out_data_size) {
     u8 *iobuf   = allocIobuf();
     u32 *inbuf  = (u32 *) iobuf;
     u32 *outbuf = (u32 *) &iobuf[0x520];
 
     switch (num_args) {
+        case 5:
+            inbuf[0x05] = arg4;
         case 4:
             inbuf[0x04] = arg3;
         case 3:
@@ -68,16 +70,16 @@ static int _ioctl_fd_handle_internal(int fd, int ioctl_num, int num_args, int ha
 // Now make all required wrappers
 // clang-format off
 #define dispatch_ioctl_arg5_out(fd, ioctl_num, handle_or_path, arg1, arg2, arg3, arg4, out_data, out_data_size) _Generic((handle_or_path), char*: _ioctl_fd_path_internal, int: _ioctl_fd_handle_internal)(fd, ioctl_num, 5, handle_or_path, arg1, arg2, arg3, arg4, out_data, out_data_size)
-#define dispatch_ioctl_arg4_out(fd, ioctl_num, handle_or_path, arg1, arg2, arg3, out_data, out_data_size) _Generic((handle_or_path), char*: _ioctl_fd_path_internal, int: _ioctl_fd_handle_internal)(fd, ioctl_num, 4, handle_or_path, arg1, arg2, arg3, out_data, out_data_size)
-#define dispatch_ioctl_arg3_out(fd, ioctl_num, handle_or_path, arg1, arg2, out_data, out_data_size) _Generic((handle_or_path), char*: _ioctl_fd_path_internal, int: _ioctl_fd_handle_internal)(fd, ioctl_num, 3, handle_or_path, arg1, arg2, 0, out_data, out_data_size)
-#define dispatch_ioctl_arg2_out(fd, ioctl_num, handle_or_path, arg1, out_data, out_data_size) _Generic((handle_or_path), char*: _ioctl_fd_path_internal, int: _ioctl_fd_handle_internal)(fd, ioctl_num, 2, handle_or_path, arg1, 0, 0, out_data, out_data_size)
-#define dispatch_ioctl_arg1_out(fd, ioctl_num, handle_or_path, out_data, out_data_size) _Generic((handle_or_path), char*: _ioctl_fd_path_internal, int: _ioctl_fd_handle_internal)(fd, ioctl_num, 1, handle_or_path, 0, 0, 0, out_data, out_data_size)
+#define dispatch_ioctl_arg4_out(fd, ioctl_num, handle_or_path, arg1, arg2, arg3, out_data, out_data_size) _Generic((handle_or_path), char*: _ioctl_fd_path_internal, int: _ioctl_fd_handle_internal)(fd, ioctl_num, 4, handle_or_path, arg1, arg2, arg3, 0, out_data, out_data_size)
+#define dispatch_ioctl_arg3_out(fd, ioctl_num, handle_or_path, arg1, arg2, out_data, out_data_size) _Generic((handle_or_path), char*: _ioctl_fd_path_internal, int: _ioctl_fd_handle_internal)(fd, ioctl_num, 3, handle_or_path, arg1, arg2, 0, 0, out_data, out_data_size)
+#define dispatch_ioctl_arg2_out(fd, ioctl_num, handle_or_path, arg1, out_data, out_data_size) _Generic((handle_or_path), char*: _ioctl_fd_path_internal, int: _ioctl_fd_handle_internal)(fd, ioctl_num, 2, handle_or_path, arg1, 0, 0, 0, out_data, out_data_size)
+#define dispatch_ioctl_arg1_out(fd, ioctl_num, handle_or_path, out_data, out_data_size) _Generic((handle_or_path), char*: _ioctl_fd_path_internal, int: _ioctl_fd_handle_internal)(fd, ioctl_num, 1, handle_or_path, 0, 0, 0, 0, out_data, out_data_size)
 
-#define dispatch_ioctl_arg5(fd, ioctl_num, handle_or_path, arg1, arg2, arg3, arg4) _Generic((handle_or_path), char*: _ioctl_fd_path_internal, int: _ioctl_fd_handle_internal)(fd, ioctl_num, 5, handle_or_path, arg1, arg2, arg3, arg5, NULL, 0)
-#define dispatch_ioctl_arg4(fd, ioctl_num, handle_or_path, arg1, arg2, arg3) _Generic((handle_or_path), char*: _ioctl_fd_path_internal, int: _ioctl_fd_handle_internal)(fd, ioctl_num, 4, handle_or_path, arg1, arg2, arg3, NULL, 0)
-#define dispatch_ioctl_arg3(fd, ioctl_num, handle_or_path, arg1, arg2) _Generic((handle_or_path), char*: _ioctl_fd_path_internal, int: _ioctl_fd_handle_internal)(fd, ioctl_num, 3, handle_or_path, arg1, arg2, 0, NULL, 0)
-#define dispatch_ioctl_arg2(fd, ioctl_num, handle_or_path, arg1) _Generic((handle_or_path), char*: _ioctl_fd_path_internal, int: _ioctl_fd_handle_internal)(fd, ioctl_num, 2, handle_or_path, arg1, 0, 0, NULL, 0)
-#define dispatch_ioctl_arg1(fd, ioctl_num, handle_or_path) _Generic((handle_or_path), char*: _ioctl_fd_path_internal, int: _ioctl_fd_handle_internal)(fd, ioctl_num, 1, handle_or_path, 0, 0, 0, NULL, 0)
+#define dispatch_ioctl_arg5(fd, ioctl_num, handle_or_path, arg1, arg2, arg3, arg4) _Generic((handle_or_path), char*: _ioctl_fd_path_internal, int: _ioctl_fd_handle_internal)(fd, ioctl_num, 5, handle_or_path, arg1, arg2, arg3, arg4, NULL, 0)
+#define dispatch_ioctl_arg4(fd, ioctl_num, handle_or_path, arg1, arg2, arg3) _Generic((handle_or_path), char*: _ioctl_fd_path_internal, int: _ioctl_fd_handle_internal)(fd, ioctl_num, 4, handle_or_path, arg1, arg2, arg3, 0, NULL, 0)
+#define dispatch_ioctl_arg3(fd, ioctl_num, handle_or_path, arg1, arg2) _Generic((handle_or_path), char*: _ioctl_fd_path_internal, int: _ioctl_fd_handle_internal)(fd, ioctl_num, 3, handle_or_path, arg1, arg2, 0, 0, NULL, 0)
+#define dispatch_ioctl_arg2(fd, ioctl_num, handle_or_path, arg1) _Generic((handle_or_path), char*: _ioctl_fd_path_internal, int: _ioctl_fd_handle_internal)(fd, ioctl_num, 2, handle_or_path, arg1, 0, 0, 0, NULL, 0)
+#define dispatch_ioctl_arg1(fd, ioctl_num, handle_or_path) _Generic((handle_or_path), char*: _ioctl_fd_path_internal, int: _ioctl_fd_handle_internal)(fd, ioctl_num, 1, handle_or_path, 0, 0, 0, 0, NULL, 0)
 
 #define GET_MACRO(_1,_2,_3,_4,_5,_6,_7, MACRO_NAME, ...) MACRO_NAME
 #define dispatch_ioctl_out(fd, ioctl_num, ...) GET_MACRO(__VA_ARGS__, dispatch_ioctl_arg5_out, dispatch_ioctl_arg4_out, dispatch_ioctl_arg3_out, dispatch_ioctl_arg2_out, dispatch_ioctl_arg1_out, NULL, NULL)(fd, ioctl_num, __VA_ARGS__)
@@ -284,7 +286,7 @@ int FSA_CloseFile(int fd, int fileHandle) {
 
 // Checked
 int FSA_SetPosFile(int fd, int fileHandle, u32 position) {
-    return _ioctl_fd_handle_internal(fd, 0x12, fileHandle, position);
+    return dispatch_ioctl(fd, 0x12, fileHandle, position);
 }
 
 // Checked
