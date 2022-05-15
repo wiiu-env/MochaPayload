@@ -22,7 +22,7 @@ typedef struct FSStat {
     u64 created;
     u64 modified;
     u8 attributes[48];
-} __attribute__((__packed__)) FSStat;
+} __attribute__((aligned(4))) __attribute__((__packed__)) FSStat;
 FSA_CHECK_SIZE(FSStat, 0x64);
 
 typedef struct FSDirectory {
