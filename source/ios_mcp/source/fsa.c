@@ -427,8 +427,9 @@ int FSA_GetCwd(int fd, char *out_data, int output_size) {
     return ret;
 }
 
+// Checked
 int FSA_MakeQuota(int fd, char *path, u32 flags, u64 size) {
-    return dispatch_ioctl(fd, 0x07, path, flags, (size >> 32), (size & 0xFFFFFFFF));
+    return dispatch_ioctl(fd, 0x1D, path, flags, (size >> 32), (size & 0xFFFFFFFF));
 }
 
 int FSA_FlushQuota(int fd, char *quota_path) {
