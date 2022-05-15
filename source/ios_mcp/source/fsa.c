@@ -179,12 +179,6 @@ int FSA_FlushVolume(int fd, char *volume_path) {
 // 8 - FSA_GetFragmentBlockInfo
 //CHECKED
 int FSA_GetInfo(int fd, char *device_path, int type, u32 *out_data) {
-    u8 *iobuf   = allocIobuf();
-    u32 *inbuf  = (u32 *) iobuf;
-    u32 *outbuf = (u32 *) &iobuf[0x520];
-    strncpy((char *) &inbuf[0x01], device_path, 0x27F);
-    inbuf[0x284 / 4] = type;
-    int ret          = svcIoctl(fd, 0x18, inbuf, 0x520, outbuf, 0x293);
     int size         = 0;
     switch (type) {
         case 0:
@@ -209,10 +203,7 @@ int FSA_GetInfo(int fd, char *device_path, int type, u32 *out_data) {
             size = sizeof(FSBlockInfo);
             break;
     }
-
-    memcpy(out_data, &outbuf[1], size);
-    freeIobuf(iobuf);
-    return ret;
+    return dispatch_ioctl_out(fd, 0x18, device_path, type, out_data, size);
 }
 
 // Checked
