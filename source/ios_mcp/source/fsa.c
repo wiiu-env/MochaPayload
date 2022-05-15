@@ -99,6 +99,38 @@ int FSA_OpenFileEx(int fd, char *path, char *mode, u32 flags, int create_mode, u
     return ret;
 }
 
+int _FSA_ReadWriteFileWithPos(int fd, void *data, u32 size, u32 cnt, u32 pos, int fileHandle, u32 flags, bool read) {
+    u8 *iobuf      = allocIobuf();
+    u32 *outbuf    = (u32 *) &iobuf[0x520];
+    iovec_s *iovec = (iovec_s *) &iobuf[0x7C0];
+    u32 *inbuf     = (u32 *) iobuf;
+
+    inbuf[0x08 / 4] = size;
+    inbuf[0x0C / 4] = cnt;
+    inbuf[0x10 / 4] = pos;
+    inbuf[0x14 / 4] = fileHandle;
+    inbuf[0x18 / 4] = flags;
+
+    iovec[0].ptr = inbuf;
+    iovec[0].len = 0x520;
+
+    iovec[1].ptr = data;
+    iovec[1].len = size * cnt;
+
+    iovec[2].ptr = outbuf;
+    iovec[2].len = 0x293;
+
+    int ret;
+    if (read) {
+        ret = svcIoctlv(fd, 0x0F, 1, 2, iovec);
+    } else {
+        ret = svcIoctlv(fd, 0x10, 2, 1, iovec);
+    }
+
+    freeIobuf(iobuf);
+    return ret;
+}
+
 int FSA_Mount(int fd, char *device_path, char *volume_path, u32 flags, char *arg_string, int arg_string_len) {
     u8 *iobuf      = allocIobuf();
     u8 *inbuf8     = iobuf;
@@ -208,6 +240,10 @@ int FSA_OpenFile(int fd, char *path, char *mode, int *outHandle) {
     return FSA_OpenFileEx(fd, path, mode, 0, 0, 0, outHandle);
 }
 
+int FSA_ReadFile(int fd, void *data, u32 size, u32 cnt, int fileHandle, u32 flags) {
+    return _FSA_ReadWriteFileWithPos(fd, data, size, cnt, 0, fileHandle, flags, true);
+}
+
 int FSA_RollbackVolume(int fd, char *volume_path) {
     return dispatch_ioctl(fd, 0x1C, volume_path);
 }
@@ -263,41 +299,6 @@ int FSA_RegisterFlushQuota(int fd, char *quota_path) {
 
 int FSA_FlushMultiQuota(int fd, char *quota_path) {
     return dispatch_ioctl(fd, 0x23, quota_path);
-}
-
-
-int _FSA_ReadWriteFileWithPos(int fd, void *data, u32 size, u32 cnt, u32 pos, int fileHandle, u32 flags, bool read) {
-    u8 *iobuf      = allocIobuf();
-    u32 *outbuf    = (u32 *) &iobuf[0x520];
-    iovec_s *iovec = (iovec_s *) &iobuf[0x7C0];
-    u32 *inbuf     = (u32 *) iobuf;
-
-    inbuf[0x08 / 4] = size;
-    inbuf[0x0C / 4] = cnt;
-    inbuf[0x10 / 4] = pos;
-    inbuf[0x14 / 4] = fileHandle;
-    inbuf[0x18 / 4] = flags;
-
-    iovec[0].ptr = inbuf;
-    iovec[0].len = 0x520;
-
-    iovec[1].ptr = data;
-    iovec[1].len = size * cnt;
-
-    iovec[2].ptr = outbuf;
-    iovec[2].len = 0x293;
-
-    int ret;
-    if (read) ret = svcIoctlv(fd, 0x0F, 1, 2, iovec);
-    else
-        ret = svcIoctlv(fd, 0x10, 2, 1, iovec);
-
-    freeIobuf(iobuf);
-    return ret;
-}
-
-int FSA_ReadFile(int fd, void *data, u32 size, u32 cnt, int fileHandle, u32 flags) {
-    return _FSA_ReadWriteFileWithPos(fd, data, size, cnt, 0, fileHandle, flags, true);
 }
 
 int FSA_WriteFile(int fd, void *data, u32 size, u32 cnt, int fileHandle, u32 flags) {
