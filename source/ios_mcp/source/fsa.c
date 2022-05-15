@@ -31,7 +31,9 @@ static int _ioctl_fd_path_internal(int fd, int ioctl_num, int num_args, char *pa
             strncpy((char *) &inbuf[0x01], path, 0x27F);
     }
     int ret = svcIoctl(fd, ioctl_num, inbuf, 0x520, outbuf, 0x293);
-    if (out_data && out_data_size) memcpy(out_data, &outbuf[1], out_data_size);
+    if (out_data && out_data_size) {
+        memcpy(out_data, &outbuf[1], out_data_size);
+    }
 
     freeIobuf(iobuf);
     return ret;
@@ -53,7 +55,9 @@ static int _ioctl_fd_handle_internal(int fd, int ioctl_num, int num_args, int ha
             inbuf[0x01] = handle;
     }
     int ret = svcIoctl(fd, ioctl_num, inbuf, 0x520, outbuf, 0x293);
-    if (out_data && out_data_size) memcpy(out_data, &outbuf[1], out_data_size);
+    if (out_data && out_data_size) {
+        memcpy(out_data, &outbuf[1], out_data_size);
+    }
 
     freeIobuf(iobuf);
     return ret;
@@ -239,9 +243,9 @@ int FSA_OpenFileEx(int fd, char *path, char *mode, int *outHandle, u32 flags, in
 
     strncpy((char *) &inbuf[0x01], path, 0x27F);
     strncpy((char *) &inbuf[0xA1], mode, 0x10);
-    inbuf[0x294/4] = flags;
-    inbuf[0x298/4] = create_mode;
-    inbuf[0x29C/4] = create_alloc_size;
+    inbuf[0x294 / 4] = flags;
+    inbuf[0x298 / 4] = create_mode;
+    inbuf[0x29C / 4] = create_alloc_size;
 
     int ret = svcIoctl(fd, 0x0E, inbuf, 0x520, outbuf, 0x293);
 
