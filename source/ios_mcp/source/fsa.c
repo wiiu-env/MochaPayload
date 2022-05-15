@@ -131,6 +131,38 @@ int _FSA_ReadWriteFileWithPos(int fd, void *data, u32 size, u32 cnt, u32 pos, in
     return ret;
 }
 
+int _FSA_RawReadWrite(int fd, void *data, u32 size_bytes, u32 cnt, u64 blocks_offset, int device_handle, bool read) {
+    u8 *iobuf      = allocIobuf();
+    u32 *inbuf     = (u32 *) iobuf;
+    u32 *outbuf    = (u32 *) &iobuf[0x520];
+    iovec_s *iovec = (iovec_s *) &iobuf[0x7C0];
+
+    inbuf[0x08 / 4] = (blocks_offset >> 32);
+    inbuf[0x0C / 4] = (blocks_offset & 0xFFFFFFFF);
+    inbuf[0x10 / 4] = cnt;
+    inbuf[0x14 / 4] = size_bytes;
+    inbuf[0x18 / 4] = device_handle;
+
+    iovec[0].ptr = inbuf;
+    iovec[0].len = 0x520;
+
+    iovec[1].ptr = data;
+    iovec[1].len = size_bytes * cnt;
+
+    iovec[2].ptr = outbuf;
+    iovec[2].len = 0x293;
+
+    int ret;
+    if (read) {
+        ret = svcIoctlv(fd, 0x6B, 1, 2, iovec);
+    } else {
+        ret = svcIoctlv(fd, 0x6C, 2, 1, iovec);
+    }
+
+    freeIobuf(iobuf);
+    return ret;
+}
+
 int FSA_Mount(int fd, char *device_path, char *volume_path, u32 flags, char *arg_string, int arg_string_len) {
     u8 *iobuf      = allocIobuf();
     u8 *inbuf8     = iobuf;
@@ -296,6 +328,18 @@ int FSA_RawOpen(int fd, char *device_path, int *outHandle) {
     return dispatch_ioctl_out(fd, 0x6A, device_path, (u32 *) outHandle, sizeof(int));
 }
 
+// Checked
+// offset in blocks of 0x1000 bytes
+int FSA_RawRead(int fd, void *data, u32 size_bytes, u32 cnt, u64 blocks_offset, int device_handle) {
+    return _FSA_RawReadWrite(fd, data, size_bytes, cnt, blocks_offset, device_handle, true);
+}
+
+// Checked
+int FSA_RawWrite(int fd, void *data, u32 size_bytes, u32 cnt, u64 blocks_offset, int device_handle) {
+    return _FSA_RawReadWrite(fd, data, size_bytes, cnt, blocks_offset, device_handle, false);
+}
+
+
 int FSA_RollbackVolume(int fd, char *volume_path) {
     return dispatch_ioctl(fd, 0x1C, volume_path);
 }
@@ -411,46 +455,6 @@ int FSA_ChangeOwner(int fd, char *path, u32 owner, u32 group) {
 
     freeIobuf(iobuf);
     return ret;
-}
-
-
-int _FSA_RawReadWrite(int fd, void *data, u32 size_bytes, u32 cnt, u64 blocks_offset, int device_handle, bool read) {
-    u8 *iobuf      = allocIobuf();
-    u32 *inbuf     = (u32 *) iobuf;
-    u32 *outbuf    = (u32 *) &iobuf[0x520];
-    iovec_s *iovec = (iovec_s *) &iobuf[0x7C0];
-
-    inbuf[0x08 / 4] = (blocks_offset >> 32);
-    inbuf[0x0C / 4] = (blocks_offset & 0xFFFFFFFF);
-    inbuf[0x10 / 4] = cnt;
-    inbuf[0x14 / 4] = size_bytes;
-    inbuf[0x18 / 4] = device_handle;
-
-    iovec[0].ptr = inbuf;
-    iovec[0].len = 0x520;
-
-    iovec[1].ptr = data;
-    iovec[1].len = size_bytes * cnt;
-
-    iovec[2].ptr = outbuf;
-    iovec[2].len = 0x293;
-
-    int ret;
-    if (read) ret = svcIoctlv(fd, 0x6B, 1, 2, iovec);
-    else
-        ret = svcIoctlv(fd, 0x6C, 2, 1, iovec);
-
-    freeIobuf(iobuf);
-    return ret;
-}
-
-// offset in blocks of 0x1000 bytes
-int FSA_RawRead(int fd, void *data, u32 size_bytes, u32 cnt, u64 blocks_offset, int device_handle) {
-    return _FSA_RawReadWrite(fd, data, size_bytes, cnt, blocks_offset, device_handle, true);
-}
-
-int FSA_RawWrite(int fd, void *data, u32 size_bytes, u32 cnt, u64 blocks_offset, int device_handle) {
-    return _FSA_RawReadWrite(fd, data, size_bytes, cnt, blocks_offset, device_handle, false);
 }
 
 int FSA_RawClose(int fd, int device_handle) {
