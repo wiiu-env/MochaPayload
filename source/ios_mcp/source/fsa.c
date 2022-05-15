@@ -80,6 +80,7 @@ static int _ioctl_fd_handle_internal(int fd, int ioctl_num, int num_args, int ha
 #define dispatch_ioctl(fd, ioctl_num, ...) GET_MACRO(__VA_ARGS__,  NULL, NULL, dispatch_ioctl_arg4, dispatch_ioctl_arg3, dispatch_ioctl_arg2, dispatch_ioctl_arg1)(fd, ioctl_num, __VA_ARGS__)
 // clang-format on
 
+
 int FSA_Mount(int fd, char *device_path, char *volume_path, u32 flags, char *arg_string, int arg_string_len) {
     u8 *iobuf      = allocIobuf();
     u8 *inbuf8     = iobuf;
@@ -106,16 +107,14 @@ int FSA_Mount(int fd, char *device_path, char *volume_path, u32 flags, char *arg
     return ret;
 }
 
+//CHECKED
 int FSA_Unmount(int fd, char *path, u32 flags) {
     return dispatch_ioctl(fd, 0x02, path, flags);
 }
 
+//CHECKED
 int FSA_FlushVolume(int fd, char *volume_path) {
     return dispatch_ioctl(fd, 0x1B, volume_path);
-}
-
-int FSA_RollbackVolume(int fd, char *volume_path) {
-    return dispatch_ioctl(fd, 0x1C, volume_path);
 }
 
 // type:
@@ -128,6 +127,7 @@ int FSA_RollbackVolume(int fd, char *volume_path) {
 // 6 - FSA_GetBadBlockInfo
 // 7 - FSA_GetJournalFreeSpace
 // 8 - FSA_GetFragmentBlockInfo
+//CHECKED
 int FSA_GetInfo(int fd, char *device_path, int type, u32 *out_data) {
     u8 *iobuf   = allocIobuf();
     u32 *inbuf  = (u32 *) iobuf;
@@ -165,29 +165,39 @@ int FSA_GetInfo(int fd, char *device_path, int type, u32 *out_data) {
     return ret;
 }
 
-int FSA_GetStat(int fd, char *path, FSStat *out_data) {
-    return FSA_GetInfo(fd, path, 5, (u32 *) out_data);
-}
-
-int FSA_MakeDir(int fd, char *path, u32 flags) {
-    return dispatch_ioctl(fd, 0x07, path, flags);
-}
-
+// Checked
 int FSA_OpenDir(int fd, char *path, int *outHandle) {
     return dispatch_ioctl_out(fd, 0x0A, path, (u32 *) outHandle, sizeof(int));
 }
 
+// Checked
 int FSA_ReadDir(int fd, int handle, FSDirectory *out_data) {
     return dispatch_ioctl_out(fd, 0x0B, handle, (u32 *) out_data, sizeof(FSDirectory));
 }
+
+// Checked
+int FSA_CloseDir(int fd, int handle) {
+    return dispatch_ioctl(fd, 0x0D, handle);
+}
+
+// Checked
+int FSA_MakeDir(int fd, char *path, u32 flags) {
+    return dispatch_ioctl(fd, 0x07, path, flags);
+}
+
+int FSA_RollbackVolume(int fd, char *volume_path) {
+    return dispatch_ioctl(fd, 0x1C, volume_path);
+}
+
+int FSA_GetStat(int fd, char *path, FSStat *out_data) {
+    return FSA_GetInfo(fd, path, 5, (u32 *) out_data);
+}
+
 
 int FSA_RewindDir(int fd, int handle) {
     return dispatch_ioctl(fd, 0x0C, handle);
 }
 
-int FSA_CloseDir(int fd, int handle) {
-    return dispatch_ioctl(fd, 0x0D, handle);
-}
 
 int FSA_ChangeDir(int fd, char *path) {
     return dispatch_ioctl(fd, 0x05, path);
