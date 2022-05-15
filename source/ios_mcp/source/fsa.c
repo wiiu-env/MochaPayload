@@ -80,6 +80,24 @@ static int _ioctl_fd_handle_internal(int fd, int ioctl_num, int num_args, int ha
 #define dispatch_ioctl(fd, ioctl_num, ...) GET_MACRO(__VA_ARGS__,  NULL, NULL, dispatch_ioctl_arg4, dispatch_ioctl_arg3, dispatch_ioctl_arg2, dispatch_ioctl_arg1)(fd, ioctl_num, __VA_ARGS__)
 // clang-format on
 
+int FSA_OpenFileEx(int fd, char *path, char *mode, u32 flags, int create_mode, u32 create_alloc_size, int *outHandle) {
+    u8 *iobuf   = allocIobuf();
+    u32 *inbuf  = (u32 *) iobuf;
+    u32 *outbuf = (u32 *) &iobuf[0x520];
+
+    strncpy((char *) &inbuf[0x01], path, 0x27F);
+    strncpy((char *) &inbuf[0xA1], mode, 0x10);
+    inbuf[0x294 / 4] = flags;
+    inbuf[0x298 / 4] = create_mode;
+    inbuf[0x29C / 4] = create_alloc_size;
+
+    int ret = svcIoctl(fd, 0x0E, inbuf, 0x520, outbuf, 0x293);
+
+    if (outHandle) *outHandle = outbuf[1];
+
+    freeIobuf(iobuf);
+    return ret;
+}
 
 int FSA_Mount(int fd, char *device_path, char *volume_path, u32 flags, char *arg_string, int arg_string_len) {
     u8 *iobuf      = allocIobuf();
@@ -185,6 +203,11 @@ int FSA_MakeDir(int fd, char *path, u32 flags) {
     return dispatch_ioctl(fd, 0x07, path, flags);
 }
 
+// Checked
+int FSA_OpenFile(int fd, char *path, char *mode, int *outHandle) {
+    return FSA_OpenFileEx(fd, path, mode, 0, 0, 0, outHandle);
+}
+
 int FSA_RollbackVolume(int fd, char *volume_path) {
     return dispatch_ioctl(fd, 0x1C, volume_path);
 }
@@ -242,28 +265,6 @@ int FSA_FlushMultiQuota(int fd, char *quota_path) {
     return dispatch_ioctl(fd, 0x23, quota_path);
 }
 
-int FSA_OpenFile(int fd, char *path, char *mode, int *outHandle) {
-    return FSA_OpenFileEx(fd, path, mode, outHandle, 0, 0, 0);
-}
-
-int FSA_OpenFileEx(int fd, char *path, char *mode, int *outHandle, u32 flags, int create_mode, u32 create_alloc_size) {
-    u8 *iobuf   = allocIobuf();
-    u32 *inbuf  = (u32 *) iobuf;
-    u32 *outbuf = (u32 *) &iobuf[0x520];
-
-    strncpy((char *) &inbuf[0x01], path, 0x27F);
-    strncpy((char *) &inbuf[0xA1], mode, 0x10);
-    inbuf[0x294 / 4] = flags;
-    inbuf[0x298 / 4] = create_mode;
-    inbuf[0x29C / 4] = create_alloc_size;
-
-    int ret = svcIoctl(fd, 0x0E, inbuf, 0x520, outbuf, 0x293);
-
-    if (outHandle) *outHandle = outbuf[1];
-
-    freeIobuf(iobuf);
-    return ret;
-}
 
 int _FSA_ReadWriteFileWithPos(int fd, void *data, u32 size, u32 cnt, u32 pos, int fileHandle, u32 flags, bool read) {
     u8 *iobuf      = allocIobuf();
