@@ -240,10 +240,25 @@ int FSA_OpenFile(int fd, char *path, char *mode, int *outHandle) {
     return FSA_OpenFileEx(fd, path, mode, 0, 0, 0, outHandle);
 }
 
+// Checked
 int FSA_ReadFile(int fd, void *data, u32 size, u32 cnt, int fileHandle, u32 flags) {
     return _FSA_ReadWriteFileWithPos(fd, data, size, cnt, 0, fileHandle, flags, true);
 }
 
+// Checked
+int FSA_WriteFile(int fd, void *data, u32 size, u32 cnt, int fileHandle, u32 flags) {
+    return _FSA_ReadWriteFileWithPos(fd, data, size, cnt, 0, fileHandle, flags, false);
+}
+
+// Checked
+int FSA_GetStatFile(int fd, int handle, FSStat *out_data) {
+    return dispatch_ioctl_out(fd, 0x14, handle, (u32 *) out_data, sizeof(FSStat));
+}
+
+// Checked
+int FSA_CloseFile(int fd, int fileHandle) {
+    return dispatch_ioctl(fd, 0x15, fileHandle);
+}
 int FSA_RollbackVolume(int fd, char *volume_path) {
     return dispatch_ioctl(fd, 0x1C, volume_path);
 }
@@ -301,10 +316,6 @@ int FSA_FlushMultiQuota(int fd, char *quota_path) {
     return dispatch_ioctl(fd, 0x23, quota_path);
 }
 
-int FSA_WriteFile(int fd, void *data, u32 size, u32 cnt, int fileHandle, u32 flags) {
-    return _FSA_ReadWriteFileWithPos(fd, data, size, cnt, 0, fileHandle, flags, false);
-}
-
 int FSA_ReadFileWithPos(int fd, void *data, u32 size, u32 cnt, u32 position, int fileHandle, u32 flags) {
     return _FSA_ReadWriteFileWithPos(fd, data, size, cnt, position, fileHandle, flags, true);
 }
@@ -337,13 +348,6 @@ int FSA_AppendFileEx(int fd, u32 size, u32 cnt, int fileHandle, u32 flags) {
 }
 
 
-int FSA_GetStatFile(int fd, int handle, FSStat *out_data) {
-    return dispatch_ioctl_out(fd, 0x14, handle, (u32 *) out_data, sizeof(FSStat));
-}
-
-int FSA_CloseFile(int fd, int fileHandle) {
-    return dispatch_ioctl(fd, 0x15, fileHandle);
-}
 
 int FSA_FlushFile(int fd, int fileHandle) {
     return dispatch_ioctl(fd, 0x17, fileHandle);
