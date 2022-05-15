@@ -433,7 +433,7 @@ static int ipc_ioctl(ipcmessage *message) {
             int create_mode       = message->ioctl.buffer_in[4];
             u32 create_alloc_size = message->ioctl.buffer_in[5];
 
-            message->ioctl.buffer_io[0] = FSA_OpenFileEx(fd, path, mode, (int *) message->ioctl.buffer_io + 1, flags, create_mode, create_alloc_size);
+            message->ioctl.buffer_io[0] = FSA_OpenFileEx(fd, path, mode, flags, create_mode, create_alloc_size, (int *) message->ioctl.buffer_io + 1);
             break;
         }
         case IOCTL_FSA_READFILEWITHPOS: {
