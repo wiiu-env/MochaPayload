@@ -95,12 +95,13 @@ export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 #-------------------------------------------------------------------------------
 $(BUILD): $(CURDIR)/source/ios_kernel/ios_kernel.bin.h
 	@[ -d $@ ] || mkdir -p $@
+	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_fs -f $(CURDIR)/source/ios_fs/Makefile
 	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_mcp -f $(CURDIR)/source/ios_mcp/Makefile
 	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_usb -f $(CURDIR)/source/ios_usb/Makefile    
 	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_kernel -f $(CURDIR)/source/ios_kernel/Makefile
 	@$(MAKE) -j1 --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
-$(CURDIR)/source/ios_kernel/ios_kernel.bin.h: $(CURDIR)/source/ios_usb/ios_usb.bin.h  $(CURDIR)/source/ios_mcp/ios_mcp.bin.h
+$(CURDIR)/source/ios_kernel/ios_kernel.bin.h: $(CURDIR)/source/ios_usb/ios_usb.bin.h  $(CURDIR)/source/ios_mcp/ios_mcp.bin.h $(CURDIR)/source/ios_fs/ios_fs.bin.h
 	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_kernel -f $(CURDIR)/source/ios_kernel/Makefile
 
 $(CURDIR)/source/ios_usb/ios_usb.bin.h: 
@@ -108,6 +109,9 @@ $(CURDIR)/source/ios_usb/ios_usb.bin.h:
     
 $(CURDIR)/source/ios_mcp/ios_mcp.bin.h: 
 	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_mcp -f $(CURDIR)/source/ios_mcp/Makefile
+
+$(CURDIR)/source/ios_fs/ios_fs.bin.h: 
+	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_fs -f $(CURDIR)/source/ios_fs/Makefile
 #-------------------------------------------------------------------------------
 clean:
 	@echo clean ...
@@ -115,6 +119,7 @@ clean:
 	@$(MAKE) --no-print-directory -C $(CURDIR)/source/ios_kernel -f  $(CURDIR)/source/ios_kernel/Makefile clean
 	@$(MAKE) --no-print-directory -C $(CURDIR)/source/ios_usb -f  $(CURDIR)/source/ios_usb/Makefile clean
 	@$(MAKE) --no-print-directory -C $(CURDIR)/source/ios_mcp -f  $(CURDIR)/source/ios_mcp/Makefile clean	
+	@$(MAKE) --no-print-directory -C $(CURDIR)/source/ios_fs -f  $(CURDIR)/source/ios_fs/Makefile clean	
 
 #-------------------------------------------------------------------------------
 else
