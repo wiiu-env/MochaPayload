@@ -32,12 +32,21 @@ u32 fs_get_phys_code_base(void) {
     return _text_start + FS_PHYS_DIFF;
 }
 
-void fs_run_patches(u32 ios_elf_start) {
+void reset_fs_bss() {
+    memset(_bss_start, 0, _bss_end - _bss_start);
+}
+
+void fs_run_patches(uint32_t ios_elf_start) {
     section_write(ios_elf_start, _text_start, (void *) fs_get_phys_code_base(), _text_end - _text_start);
     section_write_bss(ios_elf_start, _bss_start, _bss_end - _bss_start);
 
-    // Patch IOCTL 0x28 to give the calling client full fs permission
+    // Add IOCTL 0x28 to indicate the calling client should have full fs permissions
     section_write_word(ios_elf_start, 0x10701248, _FSA_ioctl0x28_hook);
+
+    // Give clients that called IOCTL 0x28 full permissions
+    section_write_word(ios_elf_start, 0x10704540, ARM_BL(0x10704540, FSA_IOCTLV_HOOK));
+    section_write_word(ios_elf_start, 0x107044f0, ARM_BL(0x107044f0, FSA_IOCTL_HOOK));
+    section_write_word(ios_elf_start, 0x10704458, ARM_BL(0x10704458, FSA_IOS_Close_Hook));
 
     // patch FSA raw access
     section_write_word(ios_elf_start, 0x1070FAE8, 0x05812070);

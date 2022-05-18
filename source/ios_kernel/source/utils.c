@@ -22,6 +22,8 @@
  * distribution.
  ***************************************************************************/
 
+#include <stddef.h>
+
 // this memcpy is optimized for speed and to work with MEM1 32 bit access alignment requirement
 void reverse_memcpy(void *dst, const void *src, unsigned int size) {
     const unsigned char *src_p;
@@ -81,4 +83,14 @@ void reverse_memcpy(void *dst, const void *src, unsigned int size) {
 
     while (size--)
         *dst_p-- = *src_p--;
+}
+
+void *memset(void *dst, int val, size_t size) {
+    char *_dst = dst;
+
+    int i;
+    for (i = 0; i < size; i++)
+        _dst[i] = val;
+
+    return dst;
 }

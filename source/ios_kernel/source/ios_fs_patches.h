@@ -24,7 +24,11 @@
 #ifndef _FS_PATCHES_H_
 #define _FS_PATCHES_H_
 
-u32 fs_get_phys_code_base(void);
-void fs_run_patches(u32 ios_elf_start);
+#include <stdint.h>
+
+uint32_t fs_get_phys_code_base(void);
+void fs_run_patches(uint32_t ios_elf_start);
+
+void reset_fs_bss();
 
 #endif

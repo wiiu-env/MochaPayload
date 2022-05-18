@@ -45,7 +45,7 @@ CFLAGS	:= -Wall -std=gnu11 -Os $(MACHDEP) $(INCLUDE) -Wno-array-bounds -fno-buil
 ASFLAGS	:= $(MACHDEP)
 
 LDFLAGS := -nostartfiles -nodefaultlibs -mbig-endian \
-	-Wl,-L $(TOPDIR) -Wl,-Map,$(notdir $*.map),-T $(TOPDIR)/link.ld
+	-Wl,-L $(TOPDIR) -Wl,-Map,$(notdir $*.map),-T $(TOPDIR)/link.ld -flto
 
 LIBS	:= -lgcc
 
