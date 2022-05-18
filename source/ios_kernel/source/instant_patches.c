@@ -21,8 +21,8 @@
  * 3. This notice may not be removed or altered from any source
  * distribution.
  ***************************************************************************/
-#include "../../ios_mcp/ios_mcp_syms.h"
 #include "../../ios_fs/ios_fs_syms.h"
+#include "../../ios_mcp/ios_mcp_syms.h"
 #include "elf_patcher.h"
 #include "ios_mcp_patches.h"
 #include "kernel_patches.h"

@@ -27,7 +27,7 @@
 #include "utils.h"
 
 #define USB_PHYS_CODE_BASE 0x101312D0
-#define FS_PHYS_CODE_BASE 0x107F8200
+#define FS_PHYS_CODE_BASE  0x107F8200
 
 typedef struct {
     u32 size;
