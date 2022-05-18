@@ -48,6 +48,9 @@ void instant_patches_setup(void) {
 
     *(volatile u32 *) 0x0812CD2C = ARM_B(0x0812CD2C, kernel_syscall_0x81);
 
+    // Patch IOCTL 0x28 to give the calling client full fs permission
+    *(volatile u32 *) 0x10701248 = _FSA_ioctl0x28_hook;
+
     // patch FSA raw access
     *(volatile u32 *) 0x1070FAE8 = 0x05812070;
     *(volatile u32 *) 0x1070FAEC = 0xEAFFFFF9;
@@ -132,6 +135,4 @@ void instant_patches_setup(void) {
     map_info.type   = 3; // 0 = undefined, 1 = kernel only, 2 = read only, 3 = read write
     map_info.cached = 0xFFFFFFFF;
     _iosMapSharedUserExecution(&map_info);
-
-    *(volatile u32 *) 0x10701248 = _FSA_ioctl0x28_hook;
 }
