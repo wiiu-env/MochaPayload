@@ -22,6 +22,7 @@
  * distribution.
  ***************************************************************************/
 #include "../../ios_mcp/ios_mcp_syms.h"
+#include "../../ios_fs/ios_fs_syms.h"
 #include "elf_patcher.h"
 #include "ios_mcp_patches.h"
 #include "kernel_patches.h"
@@ -131,4 +132,6 @@ void instant_patches_setup(void) {
     map_info.type   = 3; // 0 = undefined, 1 = kernel only, 2 = read only, 3 = read write
     map_info.cached = 0xFFFFFFFF;
     _iosMapSharedUserExecution(&map_info);
+
+    *(volatile u32 *) 0x10701248 = _FSA_ioctl0x28_hook;
 }
