@@ -24,7 +24,6 @@
 #include "kernel_patches.h"
 #include "../../common/kernel_commands.h"
 #include "elf_patcher.h"
-#include "fsa.h"
 #include "ios_mcp_patches.h"
 #include "thread.h"
 #include "types.h"
