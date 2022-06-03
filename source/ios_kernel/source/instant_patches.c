@@ -109,6 +109,12 @@ void instant_patches_setup(void) {
     // set zero to start thread directly on first title change
     *(volatile u32 *) (0x050BC580 - 0x05000000 + 0x081C0000) = 0;
 
+    // Patch FS to syslog everything
+    *(volatile u32 *) (0x107F5720) = ARM_B(0x107F5720, 0x107F0C84);
+
+    // Patch MCP to syslog everything
+    *(volatile u32 *) (0x05055438 - 0x05100000 + 0x13D80000) = ARM_B(0x05055438, 0x0503dcf8);
+
     ios_map_shared_info_t map_info;
     map_info.paddr  = 0x050BD000 - 0x05000000 + 0x081C0000;
     map_info.vaddr  = 0x050BD000;
