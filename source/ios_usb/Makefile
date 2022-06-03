@@ -1,87 +1,147 @@
+#-------------------------------------------------------------------------------
+.SUFFIXES:
+#-------------------------------------------------------------------------------
+
+ifeq ($(strip $(DEVKITPRO)),)
+$(error "Please set DEVKITPRO in your environment. export DEVKITPRO=<path to>/devkitpro")
+endif
+
+TOPDIR ?= $(CURDIR)
+
+#---------------------------------------------------------------------------------
+# iosu_rules
+#---------------------------------------------------------------------------------
 ifeq ($(strip $(DEVKITARM)),)
-$(error "Please set DEVKITARM in your environment. export DEVKITARM=<path to>devkitARM")
+$(error "Please set DEVKITARM in your environment. export DEVKITARM=<path to>/devkitARM")
 endif
 
-ifeq ($(filter $(DEVKITARM)/bin,$(PATH)),)
-export PATH:=$(DEVKITARM)/bin:$(PATH)
-endif
+include $(DEVKITARM)/base_rules
+export OBJDUMP := $(PREFIX)objdump
 
-CC = arm-none-eabi-gcc
-LINK = arm-none-eabi-gcc
-AS = arm-none-eabi-as
-OBJCOPY = arm-none-eabi-objcopy
-OBJDUMP = arm-none-eabi-objdump
-CFLAGS += -Wall -mbig-endian -std=gnu11 -mcpu=arm926ej-s -msoft-float -mfloat-abi=soft -Os
-LDFLAGS += -nostartfiles -nodefaultlibs -mbig-endian -Wl,-T,link.ld
-LIBDIRS += -L$(CURDIR)/../libs
-LIBS += -lgcc
+MACHDEP = -DSTARBUCK -mbig-endian -mcpu=arm926ej-s -msoft-float -mfloat-abi=soft
 
-CFILES = $(wildcard source/*.c)
-BINFILES = $(wildcard data/*.bin)
-OFILES = $(BINFILES:data/%.bin=build/%.bin.o)
-OFILES += $(CFILES:source/%.c=build/%.o)
-DFILES = $(CFILES:source/%.c=build/%.d)
-SFILES = $(wildcard source/*.s)
-OFILES += $(SFILES:source/%.s=build/%.o)
-PROJECTNAME = ${shell basename "$(CURDIR)"}
-CWD = "$(CURDIR)""
+%.elf:
+	@echo linking ... $(notdir $@)
+	$(SILENTCMD)$(LD) $(LDFLAGS) $(OFILES) $(LIBPATHS) $(LIBS) -o $@
+#---------------------------------------------------------------------------------
 
 #---------------------------------------------------------------------------------
-# path to tools
+# TARGET is the name of the output
+# SOURCES is a list of directories containing source code
+# DATA is a list of directories containing data files
+# INCLUDES is a list of directories containing header files
 #---------------------------------------------------------------------------------
-DEVKITPATH=$(shell echo "$(DEVKITPRO)" | sed -e 's/^\([a-zA-Z]\):/\/\1/')
-export PATH	:=	$(DEVKITPATH)/tools/bin:$(DEVKITPATH)/devkitPPC/bin:$(PATH)
+TARGET		:= $(notdir $(CURDIR))
+BUILD		:= build
+SOURCES		:= source
+DATA		:= data
+INCLUDES	:= source
 
 #---------------------------------------------------------------------------------
-# canned command sequence for binary data, taken from devkitARM
+# options for code generation
 #---------------------------------------------------------------------------------
-define bin2o
-	bin2s $< | $(AS) -EB -o $(@)
-endef
+CFLAGS	:= -Wall -Wextra -std=gnu11 -Os $(MACHDEP) $(INCLUDE) -fno-builtin
 
-.PHONY:=all dirs
+ASFLAGS	:= $(MACHDEP)
 
-all: dirs $(PROJECTNAME).bin $(PROJECTNAME)_syms.h $(PROJECTNAME).bin $(PROJECTNAME).bin.h
+LDFLAGS := -nostartfiles -nodefaultlibs -mbig-endian \
+	-Wl,-L $(TOPDIR) -Wl,-Map,$(notdir $*.map),-T $(TOPDIR)/link.ld -flto
 
-dirs:
-	@mkdir -p build
+LIBS	:= -lgcc
 
-$(PROJECTNAME).elf: $(OFILES)
-	@echo "LD $@"
-	@$(LINK) $(LDFLAGS) -o $(PROJECTNAME).elf $(sort $(filter-out build/crt0.o, $(OFILES))) $(LIBDIRS) $(LIBS)
+#-------------------------------------------------------------------------------
+# list of directories containing libraries, this must be the top level
+# containing include and lib
+#-------------------------------------------------------------------------------
+LIBDIRS	:= 
 
-$(PROJECTNAME).bin: $(PROJECTNAME).elf
-	@echo "OBJCOPY $@\n"
-	@$(OBJCOPY) -j .text -j .rodata -j .data -O binary $(PROJECTNAME).elf $@
+#---------------------------------------------------------------------------------
+# no real need to edit anything past this point unless you need to add additional
+# rules for different file extensions
+#---------------------------------------------------------------------------------
+ifneq ($(BUILD),$(notdir $(CURDIR)))
+#---------------------------------------------------------------------------------
+
+export TARGETNAME := $(TARGET)
+
+export OUTPUT	:= $(CURDIR)/$(TARGET)
+export TOPDIR	:= $(CURDIR)
+
+export VPATH	:= $(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
+	$(foreach dir,$(DATA),$(CURDIR)/$(dir))
+
+export DEPSDIR	:= $(CURDIR)/$(BUILD)
+
+CFILES	:= $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
+SFILES	:= $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
+BINFILES	:= $(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
+
+export LD	:= $(CC)
+
+export OFILES_BIN	:= $(addsuffix .o,$(BINFILES))
+export OFILES_SRC	:= $(SFILES:.s=.o) $(CFILES:.c=.o)
+export OFILES	:= $(OFILES_BIN) $(OFILES_SRC)
+export HFILES_BIN	:= $(addsuffix .h,$(subst .,_,$(BINFILES)))
+
+export INCLUDE	:= $(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
+	$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
+	-I$(CURDIR)/$(BUILD)
+
+export LIBPATHS	:= $(foreach dir,$(LIBDIRS),-L$(dir)/lib)
+
+.PHONY: $(BUILD) clean all
+#---------------------------------------------------------------------------------
+all: $(BUILD)
+
+$(BUILD):
+	@[ -d $@ ] || mkdir -p $@
+	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
+
+#---------------------------------------------------------------------------------
+clean:
+	@echo clean ...
+	@rm -fr $(BUILD) $(TARGET).elf $(TARGET).bin $(TARGET).bin.h $(TARGET)_syms.h
+
+#---------------------------------------------------------------------------------
+else
+
+DEPENDS := $(OFILES:.o=.d)
+
+#---------------------------------------------------------------------------------
+# main targets
+#---------------------------------------------------------------------------------
+all	:	$(OUTPUT).bin.h $(OUTPUT)_syms.h
+
+$(OUTPUT).elf	:	$(OFILES)
+
+$(OUTPUT).bin: $(OUTPUT).elf
+	@echo "built ... $(notdir $@)"
+	@$(OBJCOPY) -j .text -j .rodata -j .data -O binary $(OUTPUT).elf $@
 	
-$(PROJECTNAME).bin.h: $(PROJECTNAME).bin
+$(OUTPUT).bin.h: $(OUTPUT).bin
 	@raw2c $<
-	@cp $(PROJECTNAME).c $@
+	@cp $(TARGETNAME).c $@
 	
-$(PROJECTNAME)_syms.h:
-	@echo "#ifndef $(PROJECTNAME)_SYMS_H" > $@
-	@echo "#define $(PROJECTNAME)_SYMS_H" >> $@
-	@$(OBJDUMP) -EB -t -marm $(PROJECTNAME).elf | grep 'g     F .text' | grep -v '.hidden' | awk '{print "#define " $$6 " 0x" $$1}' >> $@
-	@$(OBJDUMP) -EB -t -marm $(PROJECTNAME).elf | grep -e 'g       .text' -e '_bss_' | awk '{print "#define " $$5 " 0x" $$1}' >> $@
+$(OUTPUT)_syms.h:
+	@echo "#ifndef $(TARGETNAME)_SYMS_H" > $@
+	@echo "#define $(TARGETNAME)_SYMS_H" >> $@
+	@$(OBJDUMP) -EB -t -marm $(OUTPUT).elf | grep 'g     F .text' | grep -v '.hidden' | awk '{print "#define " $$6 " 0x" $$1}' >> $@
+	@$(OBJDUMP) -EB -t -marm $(OUTPUT).elf | grep -e 'g       .text' -e '_bss_' | awk '{print "#define " $$5 " 0x" $$1}' >> $@
+	@$(OBJDUMP) -EB -t -marm $(OUTPUT).elf | grep 'g     O .fn_hook_bufs' | awk '{print "#define " $$6 " 0x" $$1}' >> $@
 	@echo "#endif" >> $@
 
-clean:
-	@rm -f build/*.o build/*.d
-	@rm -f $(PROJECTNAME).elf $(PROJECTNAME).bin $(PROJECTNAME)_syms.h $(PROJECTNAME).bin $(PROJECTNAME).bin.h $(PROJECTNAME).h $(PROJECTNAME).c
-	@echo "all cleaned up !"
+$(OFILES_SRC) : $(HFILES_BIN)
 
--include $(DFILES)
-
-build/%.o: source/%.c
-	@echo "CC $(notdir $<)"
-	@$(CC) $(CFLAGS) -c $< -o $@
-	@$(CC) -MM $< > build/$*.d
-
-build/%.o: source/%.s
-	@echo "CC $(notdir $<)"
-	@$(CC) $(CFLAGS) -xassembler-with-cpp -c $< -o $@
-	@$(CC) -MM $< > build/$*.d
-
-build/%.bin.o: data/%.bin
-	@echo "BIN $(notdir $<)"
+#-------------------------------------------------------------------------------
+# you need a rule like this for each extension you use as binary data
+#-------------------------------------------------------------------------------
+%.bin.o	%_bin.h :	%.bin
+#-------------------------------------------------------------------------------
+	@echo $(notdir $<)
 	@$(bin2o)
+
+-include $(DEPENDS)
+
+#---------------------------------------------------------------------------------------
+endif
+#---------------------------------------------------------------------------------------
