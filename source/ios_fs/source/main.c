@@ -1,26 +1,31 @@
 #include "ipc_types.h"
 #include <stdint.h>
-#include <stdio.h>
+#include <assert.h>
 
 typedef struct __attribute__((packed)) {
+    uint32_t initialized;
     uint64_t titleId;
     uint32_t processId;
     uint32_t groupId;
     uint32_t unk0;
-    uint32_t unk1;
     uint64_t capabilityMask;
-    uint32_t unk2;
-} FSAClientCapabilites;
+    uint8_t unk1[0x4518];
+    char unk2[0x280];
+    char unk3[0x280];
+    void* mutex;
+} FSAProcessData;
+static_assert(sizeof(FSAProcessData) == 0x4A3C, "FSAProcessData: wrong size");
 
 typedef struct __attribute__((packed)) {
     uint32_t opened;
-    FSAClientCapabilites *caps;
+    FSAProcessData* processData;
     char unk0[0x10];
     char unk1[0x90];
     uint32_t unk2;
     char work_dir[0x280];
     uint32_t unk3;
 } FSAClientHandle;
+static_assert(sizeof(FSAClientHandle) == 0x330, "FSAClientHandle: wrong size");
 
 FSAClientHandle *patchedClientHandles[0x64];
 
@@ -51,11 +56,11 @@ int (*const real_FSA_IOCTLV)(ResourceRequest *, uint32_t, uint32_t) = (void *) 0
 int (*const get_handle_from_val)(uint32_t)                          = (void *) 0x107046d4;
 int FSA_IOCTLV_HOOK(ResourceRequest *param_1, uint32_t u2, uint32_t u3) {
     FSAClientHandle *clientHandle = (FSAClientHandle *) get_handle_from_val(param_1->ipcmessage.fd);
-    uint64_t oldValue             = clientHandle->caps->capabilityMask;
+    uint64_t oldValue             = clientHandle->processData->capabilityMask;
     int toBeRestored              = 0;
     for (int i = 0; i < 64; i++) {
         if (patchedClientHandles[i] == clientHandle) {
-            clientHandle->caps->capabilityMask = 0xffffffffffffffffL;
+            clientHandle->processData->capabilityMask = 0xffffffffffffffffL;
             // printf("IOCTL: Force mask to 0xFFFFFFFFFFFFFFFF for client %08X\n", (uint32_t) clientHandle);
             toBeRestored = 1;
             break;
@@ -65,7 +70,7 @@ int FSA_IOCTLV_HOOK(ResourceRequest *param_1, uint32_t u2, uint32_t u3) {
 
     if (toBeRestored) {
         // printf("IOCTL: Restore mask for client %08X\n", (uint32_t) clientHandle);
-        clientHandle->caps->capabilityMask = oldValue;
+        clientHandle->processData->capabilityMask = oldValue;
     }
 
     return res;
@@ -73,15 +78,14 @@ int FSA_IOCTLV_HOOK(ResourceRequest *param_1, uint32_t u2, uint32_t u3) {
 
 int (*const real_FSA_IOCTL)(ResourceRequest *, uint32_t, uint32_t, uint32_t) = (void *) 0x107010a8;
 
-
 int FSA_IOCTL_HOOK(ResourceRequest *request, uint32_t u2, uint32_t u3, uint32_t u4) {
     FSAClientHandle *clientHandle = (FSAClientHandle *) get_handle_from_val(request->ipcmessage.fd);
-    uint64_t oldValue             = clientHandle->caps->capabilityMask;
+    uint64_t oldValue             = clientHandle->processData->capabilityMask;
     int toBeRestored              = 0;
     for (int i = 0; i < 64; i++) {
         if (patchedClientHandles[i] == clientHandle) {
             // printf("IOCTL: Force mask to 0xFFFFFFFFFFFFFFFF for client %08X\n", (uint32_t) clientHandle);
-            clientHandle->caps->capabilityMask = 0xffffffffffffffffL;
+            clientHandle->processData->capabilityMask = 0xffffffffffffffffL;
             toBeRestored                       = 1;
             break;
         }
@@ -90,7 +94,7 @@ int FSA_IOCTL_HOOK(ResourceRequest *request, uint32_t u2, uint32_t u3, uint32_t 
 
     if (toBeRestored) {
         // printf("IOCTL: Restore mask for client %08X\n", (uint32_t) clientHandle);
-        clientHandle->caps->capabilityMask = oldValue;
+        clientHandle->processData->capabilityMask = oldValue;
     }
 
     return res;
