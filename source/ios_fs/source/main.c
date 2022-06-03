@@ -1,6 +1,6 @@
 #include "ipc_types.h"
-#include <stdint.h>
 #include <assert.h>
+#include <stdint.h>
 
 typedef struct __attribute__((packed)) {
     uint32_t initialized;
@@ -12,13 +12,13 @@ typedef struct __attribute__((packed)) {
     uint8_t unk1[0x4518];
     char unk2[0x280];
     char unk3[0x280];
-    void* mutex;
+    void *mutex;
 } FSAProcessData;
 static_assert(sizeof(FSAProcessData) == 0x4A3C, "FSAProcessData: wrong size");
 
 typedef struct __attribute__((packed)) {
     uint32_t opened;
-    FSAProcessData* processData;
+    FSAProcessData *processData;
     char unk0[0x10];
     char unk1[0x90];
     uint32_t unk2;
@@ -86,7 +86,7 @@ int FSA_IOCTL_HOOK(ResourceRequest *request, uint32_t u2, uint32_t u3, uint32_t 
         if (patchedClientHandles[i] == clientHandle) {
             // printf("IOCTL: Force mask to 0xFFFFFFFFFFFFFFFF for client %08X\n", (uint32_t) clientHandle);
             clientHandle->processData->capabilityMask = 0xffffffffffffffffL;
-            toBeRestored                       = 1;
+            toBeRestored                              = 1;
             break;
         }
     }
