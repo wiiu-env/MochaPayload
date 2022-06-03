@@ -25,6 +25,7 @@
 #include "../../ios_fs/ios_fs_syms.h"
 #include "elf_patcher.h"
 #include "types.h"
+#include <string.h>
 
 #define FS_PHYS_DIFF 0
 
@@ -33,7 +34,7 @@ u32 fs_get_phys_code_base(void) {
 }
 
 void reset_fs_bss() {
-    memset(_bss_start, 0, _bss_end - _bss_start);
+    memset((void*) _bss_start, 0, _bss_end - _bss_start);
 }
 
 void fs_run_patches(uint32_t ios_elf_start) {
