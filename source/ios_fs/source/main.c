@@ -32,17 +32,16 @@ int FSA_ioctl0x28_hook(FSAClientHandle *handle) {
         }
         if (patchedClientHandles[i] == 0) {
             patchedClientHandles[i] = handle;
-            printf("Will patch %p in the future. Slot %d\n", handle, i);
+            // printf("Will patch %p in the future. Slot %d\n", handle, i);
             found = 1;
             break;
         }
     }
     if (!found) {
-        printf("Failed to find free slot for %p\n", handle);
+        // printf("Failed to find free slot for %p\n", handle);
     }
     return 0;
 }
-
 
 typedef struct __attribute__((packed)) {
     ipcmessage ipcmessage;
@@ -57,7 +56,7 @@ int FSA_IOCTLV_HOOK(ResourceRequest *param_1, uint32_t u2, uint32_t u3) {
     for (int i = 0; i < 64; i++) {
         if (patchedClientHandles[i] == clientHandle) {
             clientHandle->caps->capabilityMask = 0xffffffffffffffffL;
-            printf("IOCTL: Force mask to 0xFFFFFFFFFFFFFFFF for client %08X\n", (uint32_t) clientHandle);
+            // printf("IOCTL: Force mask to 0xFFFFFFFFFFFFFFFF for client %08X\n", (uint32_t) clientHandle);
             toBeRestored = 1;
             break;
         }
@@ -65,7 +64,7 @@ int FSA_IOCTLV_HOOK(ResourceRequest *param_1, uint32_t u2, uint32_t u3) {
     int res = real_FSA_IOCTLV(param_1, u2, u3);
 
     if (toBeRestored) {
-        printf("IOCTL: Restore mask for client %08X\n", (uint32_t) clientHandle);
+        // printf("IOCTL: Restore mask for client %08X\n", (uint32_t) clientHandle);
         clientHandle->caps->capabilityMask = oldValue;
     }
 
@@ -75,37 +74,37 @@ int FSA_IOCTLV_HOOK(ResourceRequest *param_1, uint32_t u2, uint32_t u3) {
 int (*const real_FSA_IOCTL)(ResourceRequest *, uint32_t, uint32_t, uint32_t) = (void *) 0x107010a8;
 
 
-int FSA_IOCTL_HOOK(ResourceRequest *param_1, uint32_t u2, uint32_t u3, uint32_t u4) {
-    FSAClientHandle *clientHandle = (FSAClientHandle *) get_handle_from_val(param_1->ipcmessage.fd);
+int FSA_IOCTL_HOOK(ResourceRequest *request, uint32_t u2, uint32_t u3, uint32_t u4) {
+    FSAClientHandle *clientHandle = (FSAClientHandle *) get_handle_from_val(request->ipcmessage.fd);
     uint64_t oldValue             = clientHandle->caps->capabilityMask;
     int toBeRestored              = 0;
     for (int i = 0; i < 64; i++) {
         if (patchedClientHandles[i] == clientHandle) {
-            printf("IOCTL: Force mask to 0xFFFFFFFFFFFFFFFF for client %08X\n", (uint32_t) clientHandle);
+            // printf("IOCTL: Force mask to 0xFFFFFFFFFFFFFFFF for client %08X\n", (uint32_t) clientHandle);
             clientHandle->caps->capabilityMask = 0xffffffffffffffffL;
             toBeRestored                       = 1;
             break;
         }
     }
-    int res = real_FSA_IOCTL(param_1, u2, u3, u4);
+    int res = real_FSA_IOCTL(request, u2, u3, u4);
 
     if (toBeRestored) {
-        printf("IOCTL: Restore mask for client %08X\n", (uint32_t) clientHandle);
+        // printf("IOCTL: Restore mask for client %08X\n", (uint32_t) clientHandle);
         clientHandle->caps->capabilityMask = oldValue;
     }
 
     return res;
 }
 
-int (*const real_FSA_IOS_Close)(FSAClientHandle *, ResourceRequest *) = (void *) 0x10704864;
-int FSA_IOS_Close_Hook(uint32_t fd, ResourceRequest *u1) {
+int (*const real_FSA_IOS_Close)(uint32_t fd, ResourceRequest *request) = (void *) 0x10704864;
+int FSA_IOS_Close_Hook(uint32_t fd, ResourceRequest *request) {
     FSAClientHandle *clientHandle = (FSAClientHandle *) get_handle_from_val(fd);
     for (int i = 0; i < 64; i++) {
         if (patchedClientHandles[i] == clientHandle) {
-            printf("Close: %p will be closed, reset slot %d\n", clientHandle, i);
+            // printf("Close: %p will be closed, reset slot %d\n", clientHandle, i);
             patchedClientHandles[i] = 0;
             break;
         }
     }
-    return real_FSA_IOS_Close(fd, u1);
+    return real_FSA_IOS_Close(fd, request);
 }

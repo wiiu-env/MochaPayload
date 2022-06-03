@@ -52,10 +52,6 @@ void instant_patches_setup(void) {
     // Add IOCTL 0x28 to indicate the calling client should have full fs permissions
     *(volatile u32 *) 0x10701248 = _FSA_ioctl0x28_hook;
 
-    // patch FSA raw access
-    *(volatile u32 *) 0x1070FAE8 = 0x05812070;
-    *(volatile u32 *) 0x1070FAEC = 0xEAFFFFF9;
-
     // Give clients that called IOCTL 0x28 full permissions
     *(volatile u32 *) 0x10704540 = ARM_BL(0x10704540, FSA_IOCTLV_HOOK);
     *(volatile u32 *) 0x107044f0 = ARM_BL(0x107044f0, FSA_IOCTL_HOOK);
