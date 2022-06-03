@@ -252,15 +252,6 @@ int _MCP_ioctl100_patch(ipcmessage *msg) {
                 skipPPCSetup = true;
                 break;
             }
-            case IPC_CUSTOM_META_XML_READ: {
-                if (msg->ioctl.length_io >= sizeof(ACPMetaXml)) {
-                    DEBUG_FUNCTION_LINE("IPC_CUSTOM_META_XML_READ\n");
-                    ACPMetaXml *app_ptr = (ACPMetaXml *) msg->ioctl.buffer_io;
-                    strncpy(app_ptr->longname_en, rpxpath, 256 - 1);
-                    strncpy(app_ptr->shortname_en, rpxpath, 256 - 1);
-                }
-                break;
-            }
             case IPC_CUSTOM_LOAD_CUSTOM_RPX: {
                 DEBUG_FUNCTION_LINE("IPC_CUSTOM_LOAD_CUSTOM_RPX\n");
 
