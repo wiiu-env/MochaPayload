@@ -1,5 +1,7 @@
 OUTPUT_ARCH(arm)
 
+PROVIDE(snprintf = 0x05059010);
+
 SECTIONS
 {
 	.text 0x05116000 : {

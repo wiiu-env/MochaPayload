@@ -21,6 +21,7 @@
 #include "ipc_types.h"
 #include "logger.h"
 #include "svc.h"
+#include <stdio.h>
 #include <string.h>
 
 int (*const real_MCP_LoadFile)(ipcmessage *msg)                                                                                                      = (void *) 0x0501CAA8 + 1; //+1 for thumb
@@ -74,10 +75,13 @@ int _MCP_LoadFile_patch(ipcmessage *msg) {
         }
     }
     if (strncmp(request->name, "men.rpx", strlen("men.rpx")) == 0) {
-        replace_path = "wiiu/root.rpx";
+        rpxpath[0] = '\0';
         if (skipPPCSetup) {
-            replace_path = "wiiu/men.rpx";
+            snprintf(rpxpath, sizeof(rpxpath) - 1, "%s/men.rpx", &((char *) 0x05119F00)[19]); // Copy in environment path
+        } else {
+            snprintf(rpxpath, sizeof(rpxpath) - 1, "%s/root.rpx", &((char *) 0x05119F00)[19]); // Copy in environment path
         }
+
         // At startup we want to hook into the Wii U Menu by replacing the men.rpx with a file from the SD Card
         // The replacement may restart the application to execute a kernel exploit.
         // The men.rpx is hooked until the "IPC_CUSTOM_MEN_RPX_HOOK_COMPLETED" command is passed to IOCTL 0x100.
