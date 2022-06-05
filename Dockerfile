@@ -1,3 +1,3 @@
-FROM wiiuenv/devkitppc:20220601
+FROM wiiuenv/devkitppc:20220605
 
 WORKDIR project
