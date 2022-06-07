@@ -40,12 +40,14 @@ INCLUDES	:= source
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
-CFLAGS	:= -Wall -Wextra -std=gnu11 -Os $(MACHDEP) $(INCLUDE) -fno-builtin
+LTOFLAGS    := -flto=auto -fno-fat-lto-objects -fuse-linker-plugin -Os
+
+CFLAGS	:= -Wall -Wextra -std=gnu11 $(MACHDEP) $(INCLUDE) -fno-builtin $(LTOFLAGS)
 
 ASFLAGS	:= $(MACHDEP)
 
 LDFLAGS := -nostartfiles -nodefaultlibs -mbig-endian \
-	-Wl,-L $(TOPDIR) -Wl,-Map,$(notdir $*.map),-T $(TOPDIR)/link.ld -flto
+	-Wl,-L $(TOPDIR) -Wl,-Map,$(notdir $*.map),-T $(TOPDIR)/link.ld $(LTOFLAGS)
 
 LIBS	:= -lgcc
 
