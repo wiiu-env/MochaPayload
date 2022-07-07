@@ -174,8 +174,16 @@ int _MCP_ReadCOSXml_patch(uint32_t u1, uint32_t u2, MCPPPrepareTitleInfo *xmlDat
 
     int res = real_MCP_ReadCOSXml_patch(u1, u2, xmlData);
 
-    // Give us sd access!
-    xmlData->permissions[4].mask = 0xFFFFFFFFFFFFFFFF;
+    /*
+    For some reason ONE PIECE Unlimited World Red softlocks when it has full FSA permissions.
+    */
+    if (xmlData->titleId != 0x0005000010175C00 && // ONE PIECE Unlimited World Red USA
+        xmlData->titleId != 0x0005000010175D00 && // ONE PIECE Unlimited World Red EUR
+        xmlData->titleId != 0x0005000010148000) { // ONE PIECE Unlimited World Red JPN
+
+        // Give us sd access!
+        xmlData->permissions[4].mask = 0xFFFFFFFFFFFFFFFF;
+    }
     /*
     For some reason Mass Effects 3 softlocks when it has full ACP permissions.
     */
