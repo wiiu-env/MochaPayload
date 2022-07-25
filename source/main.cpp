@@ -5,6 +5,7 @@
 #include <coreinit/ios.h>
 #include <cstdio>
 #include <cstring>
+#include <mocha/commands.h>
 #include <sysapp/title.h>
 #include <whb/log.h>
 #include <whb/log_udp.h>

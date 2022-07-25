@@ -23,6 +23,7 @@
 #include "ipc_types.h"
 #include "logger.h"
 #include "svc.h"
+#include <mocha/commands.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -31,7 +32,6 @@ int (*const MCP_DoLoadFile)(const char *path, const char *path2, void *outputBuf
 
 static int MCP_LoadCustomFile(int target, char *path, int filesize, int fileoffset, void *out_buffer, int buffer_len, int pos);
 
-static bool usbLoggingEnabled     = false;
 static bool replace_valid         = false;
 static bool skipPPCSetup          = false;
 static bool doWantReplaceRPX      = false;
@@ -44,7 +44,7 @@ static char rpxpath[256];
 #define FAIL_ON(cond, val)         \
     if (cond) {                    \
         log(#cond " (%08X)", val); \
-        return -29;                \
+        return 29;                 \
     }
 
 int _MCP_LoadFile_patch(ipcmessage *msg) {
@@ -60,10 +60,10 @@ int _MCP_LoadFile_patch(ipcmessage *msg) {
     //DEBUG_FUNCTION_LINE("msg->ioctl.buffer_io = %p, msg->ioctl.length_io = 0x%X\n", msg->ioctl.buffer_io, msg->ioctl.length_io);
     //DEBUG_FUNCTION_LINE("request->type = %d, request->pos = %d, request->name = \"%s\"\n", request->type, request->pos, request->name);
 
-    int replace_target     = replace_target_device;
-    int replace_filesize   = rep_filesize;
-    int replace_fileoffset = rep_fileoffset;
-    char *replace_path     = rpxpath;
+    LoadRPXTargetEnum replace_target = replace_target_device;
+    int replace_filesize             = rep_filesize;
+    int replace_fileoffset           = rep_fileoffset;
+    char *replace_path               = rpxpath;
 
     if (strlen(request->name) > 1 && request->name[strlen(request->name) - 1] == 'x') {
         if (strncmp(request->name, "safe.rpx", strlen("safe.rpx")) != 0) {
@@ -88,14 +88,14 @@ int _MCP_LoadFile_patch(ipcmessage *msg) {
         // The replacement may restart the application to execute a kernel exploit.
         // The men.rpx is hooked until the "IPC_CUSTOM_MEN_RPX_HOOK_COMPLETED" command is passed to IOCTL 0x100.
         // If the loading of the replacement file fails, the Wii U Menu is loaded normally.
-        replace_target     = LOAD_FILE_TARGET_SD_CARD;
+        replace_target     = LOAD_RPX_TARGET_SD_CARD;
         replace_filesize   = 0; // unknown
         replace_fileoffset = 0;
     } else if (strncmp(request->name, "safe.rpx", strlen("safe.rpx")) == 0) {
         // if we don't explicitly replace files, we do want replace the Health and Safety app with the HBL
         if (request->pos == 0 && !doWantReplaceRPX) {
             replace_path   = "wiiu/apps/homebrew_launcher/homebrew_launcher.rpx";
-            replace_target = LOAD_FILE_TARGET_SD_CARD;
+            replace_target = LOAD_RPX_TARGET_SD_CARD;
             //doWantReplaceXML = false;
             doWantReplaceRPX   = true;
             replace_filesize   = 0; // unknown
@@ -134,7 +134,7 @@ static int MCP_LoadCustomFile(int target, char *path, int filesize, int fileoffs
 
     char mountpath[] = "/vol/storage_iosu_homebrew";
 
-    if (target == LOAD_FILE_TARGET_SD_CARD) {
+    if (target == LOAD_RPX_TARGET_SD_CARD) {
         int fsa_h     = svcOpen("/dev/fsa", 0);
         int mount_res = FSA_Mount(fsa_h, "/dev/sdcard01", mountpath, 2, NULL, 0);
         svcClose(fsa_h);
@@ -162,7 +162,7 @@ static int MCP_LoadCustomFile(int target, char *path, int filesize, int fileoffs
         }
     }
 
-    if (result < 0x400000 && target == LOAD_FILE_TARGET_SD_CARD) {
+    if (result < 0x400000 && target == LOAD_RPX_TARGET_SD_CARD) {
         int fsa_h       = svcOpen("/dev/fsa", 0);
         int unmount_res = FSA_Unmount(fsa_h, mountpath, 0x80000002);
         svcClose(fsa_h);
@@ -270,7 +270,15 @@ int _MCP_ioctl100_patch(ipcmessage *msg) {
                 DEBUG_FUNCTION_LINE("IPC_CUSTOM_LOAD_CUSTOM_RPX\n");
 
                 if (msg->ioctl.length_in >= 0x110) {
-                    int target     = msg->ioctl.buffer_in[0x04 / 0x04];
+                    int target = msg->ioctl.buffer_in[0x04 / 0x04];
+                    if (target == LOAD_RPX_TARGET_EXTRA_REVERT_PREPARE) {
+                        doWantReplaceRPX = false;
+                        replace_valid    = false;
+                        return 0;
+                    }
+                    if (target != LOAD_RPX_TARGET_SD_CARD) {
+                        return 29;
+                    }
                     int filesize   = msg->ioctl.buffer_in[0x08 / 0x04];
                     int fileoffset = msg->ioctl.buffer_in[0x0C / 0x04];
                     char *str_ptr  = (char *) &msg->ioctl.buffer_in[0x10 / 0x04];
@@ -285,11 +293,15 @@ int _MCP_ioctl100_patch(ipcmessage *msg) {
                     replace_valid = true;
 
                     DEBUG_FUNCTION_LINE("Will load %s for next title from target: %d (offset %d, filesize %d)\n", rpxpath, target, rep_fileoffset, rep_filesize);
+                    return 0;
+                } else {
+                    return 29;
                 }
                 break;
             }
             case IPC_CUSTOM_START_MCP_THREAD: {
                 _startMainThread();
+                return 0;
                 break;
             }
             case IPC_CUSTOM_COPY_ENVIRONMENT_PATH: {
@@ -328,13 +340,24 @@ int _MCP_ioctl100_patch(ipcmessage *msg) {
                     svcClose(handle);
                 }
 
-                // Kill existing syslogs to avoid long catch up
-                uint32_t *bufferPtr = (uint32_t *) (*(uint32_t *) 0x05095ecc);
-                bufferPtr[0]        = 0;
-                bufferPtr[1]        = 0;
+                bool showCompleteLog = msg->ioctl.buffer_in && msg->ioctl.length_in >= 0x08 && msg->ioctl.buffer_in[1] == 1;
+                if (!showCompleteLog) {
+                    // Kill existing syslogs to avoid long catch up
+                    uint32_t *bufferPtr = (uint32_t *) (*(uint32_t *) 0x05095ecc);
+                    bufferPtr[0]        = 0;
+                    bufferPtr[1]        = 0;
+                }
 
-                usbLoggingEnabled = true;
-
+                break;
+            }
+            case IPC_CUSTOM_GET_MOCHA_API_VERSION: {
+                if (msg->ioctl.buffer_io && msg->ioctl.length_io >= 8) {
+                    msg->ioctl.buffer_io[0] = 0xCAFEBABE;
+                    msg->ioctl.buffer_io[1] = MOCHA_API_VERSION;
+                    return 0;
+                } else {
+                    return 29;
+                }
                 break;
             }
             default: {
