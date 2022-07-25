@@ -66,14 +66,14 @@ int _MCP_LoadFile_patch(ipcmessage *msg) {
     char *replace_path               = rpxpath;
 
     if (strlen(request->name) > 1 && request->name[strlen(request->name) - 1] == 'x') {
-        if (strncmp(request->name, "safe.rpx", strlen("safe.rpx")) != 0) {
-            //DEBUG_FUNCTION_LINE("set replace_valid to false\n");
-            replace_valid = false;
-        } else if (request->pos == 0) {
-            if (replace_valid) {
+        if (strncmp(request->name, "safe.rpx", strlen("safe.rpx")) == 0 || strncmp(request->name, "ply.rpx", strlen("ply.rpx")) == 0) {
+            if (request->pos == 0 && replace_valid) {
                 //DEBUG_FUNCTION_LINE("set doWantReplaceRPX to true\n");
                 doWantReplaceRPX = true;
             }
+        } else {
+            //DEBUG_FUNCTION_LINE("set replace_valid to false\n");
+            replace_valid = false;
         }
     }
     if (strncmp(request->name, "men.rpx", strlen("men.rpx")) == 0) {
@@ -91,7 +91,7 @@ int _MCP_LoadFile_patch(ipcmessage *msg) {
         replace_target     = LOAD_RPX_TARGET_SD_CARD;
         replace_filesize   = 0; // unknown
         replace_fileoffset = 0;
-    } else if (strncmp(request->name, "safe.rpx", strlen("safe.rpx")) == 0) {
+    } else if (strncmp(request->name, "safe.rpx", strlen("safe.rpx")) == 0 || strncmp(request->name, "ply.rpx", strlen("ply.rpx")) == 0) {
         // if we don't explicitly replace files, we do want replace the Health and Safety app with the HBL
         if (request->pos == 0 && !doWantReplaceRPX) {
             replace_path   = "wiiu/apps/homebrew_launcher/homebrew_launcher.rpx";
@@ -199,9 +199,12 @@ int _MCP_ReadCOSXml_patch(uint32_t u1, uint32_t u2, MCPPPrepareTitleInfo *xmlDat
 
     // if we replace the RPX we want to increase the max_codesize and give us full permission!
     if (replace_valid) {
-        if (xmlData->titleId == 0x000500101004E000 ||
+        if (xmlData->titleId == 0x000500101004E000 || // H&S
             xmlData->titleId == 0x000500101004E100 ||
-            xmlData->titleId == 0x000500101004E200) {
+            xmlData->titleId == 0x000500101004E200 ||
+            xmlData->titleId == 0x000500101004C000 || // Daily log
+            xmlData->titleId == 0x000500101004C100 ||
+            xmlData->titleId == 0x000500101004C200) {
             xmlData->codegen_size = 0x02000000;
             xmlData->codegen_core = 0x80000001;
             xmlData->max_size     = 0x40000000;
@@ -249,11 +252,6 @@ extern int _startMainThread(void);
 /*  RPX replacement! Call this ioctl to replace the next loaded RPX with an arbitrary path.
     DO NOT RETURN 0, this affects the codepaths back in the IOSU code */
 int _MCP_ioctl100_patch(ipcmessage *msg) {
-    /*  Give some method to detect this ioctl's prescence, even if the other args are bad */
-    if (msg->ioctl.buffer_io && msg->ioctl.length_io >= sizeof(u32)) {
-        *(u32 *) msg->ioctl.buffer_io = 1;
-    }
-
     FAIL_ON(!msg->ioctl.buffer_in, 0);
     FAIL_ON(!msg->ioctl.length_in, 0);
 
