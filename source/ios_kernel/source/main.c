@@ -27,6 +27,7 @@
 #include "utils.h"
 
 #define USB_PHYS_CODE_BASE 0x101312D0
+#define FS_PHYS_CODE_BASE  0x107F8200
 
 typedef struct {
     u32 size;
@@ -90,6 +91,9 @@ int _main() {
 
     payloads = (payload_info_t *) 0x00160000;
     kernel_memcpy((void *) mcp_get_phys_code_base(), payloads->data, payloads->size);
+
+    payloads = (payload_info_t *) 0x00170000;
+    kernel_memcpy((void *) FS_PHYS_CODE_BASE, payloads->data, payloads->size);
 
     // run all instant patches as necessary
     instant_patches_setup();

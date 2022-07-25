@@ -21,8 +21,10 @@
  * 3. This notice may not be removed or altered from any source
  * distribution.
  ***************************************************************************/
+#include "../../ios_fs/ios_fs_syms.h"
 #include "../../ios_mcp/ios_mcp_syms.h"
 #include "elf_patcher.h"
+#include "ios_fs_patches.h"
 #include "ios_mcp_patches.h"
 #include "kernel_patches.h"
 #include "types.h"
@@ -47,9 +49,20 @@ void instant_patches_setup(void) {
 
     *(volatile u32 *) 0x0812CD2C = ARM_B(0x0812CD2C, kernel_syscall_0x81);
 
+    // Keep patches for backwards compatibility (libiosuhax)
     // patch FSA raw access
     *(volatile u32 *) 0x1070FAE8 = 0x05812070;
     *(volatile u32 *) 0x1070FAEC = 0xEAFFFFF9;
+
+    // Add IOCTL 0x28 to indicate the calling client should have full fs permissions
+    *(volatile u32 *) 0x10701248 = _FSA_ioctl0x28_hook;
+
+    // Give clients that called IOCTL 0x28 full permissions
+    *(volatile u32 *) 0x10704540 = ARM_BL(0x10704540, FSA_IOCTLV_HOOK);
+    *(volatile u32 *) 0x107044f0 = ARM_BL(0x107044f0, FSA_IOCTL_HOOK);
+    *(volatile u32 *) 0x10704458 = ARM_BL(0x10704458, FSA_IOS_Close_Hook);
+
+    reset_fs_bss();
 
     // patch /dev/odm IOCTL 0x06 to return the disc key if in_buf[0] > 2.
     *(volatile u32 *) 0x10739948 = 0xe3a0b001; // mov r11, 0x01
