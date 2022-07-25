@@ -1,14 +1,13 @@
+#include "common/ipc_defs.h"
+#include "ios_exploit.h"
 #include <coreinit/cache.h>
+#include <coreinit/debug.h>
 #include <coreinit/ios.h>
 #include <cstdio>
 #include <cstring>
 #include <sysapp/title.h>
-
 #include <whb/log.h>
 #include <whb/log_udp.h>
-
-#include "common/ipc_defs.h"
-#include "ios_exploit.h"
 
 int main(int argc, char **argv) {
     WHBLogUdpInit();
@@ -21,7 +20,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    uint64_t sysmenuIdUll = _SYSGetSystemApplicationTitleId(SYSTEM_APP_ID_HOME_MENU);
+    uint64_t sysmenuIdUll = _SYSGetSystemApplicationTitleId(SYSTEM_APP_ID_WII_U_MENU);
     memcpy((void *) 0xF417FFF0, &sysmenuIdUll, 8);
     DCStoreRange((void *) 0xF417FFF0, 0x8);
 

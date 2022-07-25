@@ -7,3 +7,4 @@ build/
 cmake-build-debug/
 .idea/
 CMakeLists.txt
+cmake-build-debug-mocha-builder/
