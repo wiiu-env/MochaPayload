@@ -102,11 +102,6 @@ void instant_patches_setup(void) {
     // give us bsp::ee:read permission for PPC
     *(volatile u32 *) (0xe6044db0 - 0xe6042000 + 0x13d02000) = 0x000001F0;
 
-    // Patch MCP debugmode check for syslog
-    *(volatile u32 *) (0x050290d8 - 0x05000000 + 0x081C0000) = 0x20004770;
-    // Patch TEST to allow syslog
-    *(volatile u32 *) (0xe4007828 - 0xe4000000 + 0x13A40000) = 0xe3a00000;
-
     // patch default title id to system menu
     *(volatile u32 *) mcp_data_phys(0x050B817C) = *(volatile u32 *) 0x0017FFF0;
     *(volatile u32 *) mcp_data_phys(0x050B8180) = *(volatile u32 *) 0x0017FFF4;

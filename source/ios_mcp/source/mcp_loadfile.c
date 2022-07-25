@@ -17,7 +17,9 @@
  */
 
 #include "../../common/ipc_defs.h"
+#include "../../common/kernel_commands.h"
 #include "fsa.h"
+#include "imports.h"
 #include "ipc_types.h"
 #include "logger.h"
 #include "svc.h"
@@ -299,10 +301,21 @@ int _MCP_ioctl100_patch(ipcmessage *msg) {
                 }
             }
             case IPC_CUSTOM_START_USB_LOGGING: {
-                if (usbLoggingEnabled || *((uint32_t *) 0x050290dc) == 0x42424242) {
+                if (*((uint32_t *) 0x050290dc) == 0x42424242) {
                     // Skip syslog after a reload
                     break;
                 }
+
+                // set the flag to not run this twice.
+                svcCustomKernelCommand(KERNEL_WRITE32, 0x050290dc, 0x42424242);
+
+                // Patch MCP debugmode check for usb syslog
+                svcCustomKernelCommand(KERNEL_WRITE32, 0x050290d8, 0x20004770);
+                // Patch TEST to allow usb syslog
+                svcCustomKernelCommand(KERNEL_WRITE32, 0xe4007828, 0xe3a00000);
+
+                usleep(1000 * 10);
+
                 int handle = svcOpen("/dev/testproc1", 0);
                 if (handle > 0) {
                     svcResume(handle);

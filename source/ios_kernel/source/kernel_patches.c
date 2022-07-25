@@ -56,8 +56,11 @@ ThreadContext_t **currentThreadContext = (ThreadContext_t **) 0x08173ba0;
 uint32_t *domainAccessPermissions      = (uint32_t *) 0x081a4000;
 
 int kernel_syscall_0x81(u32 command, u32 arg1, u32 arg2, u32 arg3) {
-    int result = 0;
-    int level  = disable_interrupts();
+    void (*invalidate_icache)()                           = (void (*)()) 0x0812DCF0;
+    void (*invalidate_dcache)(unsigned int, unsigned int) = (void (*)()) 0x08120164;
+    void (*flush_dcache)(unsigned int, unsigned int)      = (void (*)()) 0x08120160;
+    int result                                            = 0;
+    int level                                             = disable_interrupts();
     set_domain_register(domainAccessPermissions[0]); // 0 = KERNEL
 
     switch (command) {
@@ -67,10 +70,14 @@ int kernel_syscall_0x81(u32 command, u32 arg1, u32 arg2, u32 arg3) {
         }
         case KERNEL_WRITE32: {
             *(volatile u32 *) arg1 = arg2;
+            flush_dcache(arg1, 4);
+            invalidate_icache();
             break;
         }
         case KERNEL_MEMCPY: {
             kernel_memcpy((void *) arg1, (void *) arg2, arg3);
+            flush_dcache(arg1, arg3);
+            invalidate_icache();
             break;
         }
         case KERNEL_READ_OTP: {
@@ -127,18 +134,21 @@ void kernel_run_patches(u32 ios_elf_start) {
     section_write_word(ios_elf_start, 0xe22b2a78, 0x00000000);
     section_write_word(ios_elf_start, 0xe204fb68, 0xe3a00000);
 
-    // patch MCP syslog debug mode check
-    section_write_word(ios_elf_start, 0x050290d8, 0x20004770);
+    // Keep usb for reboot logging if we already do usb logging
+    if (*((volatile uint32_t *) (0x050290dc - 0x05000000 + 0x081C0000)) == 0x42424242) {
+        // patch TEST debug mode check
+        //section_write_word(ios_elf_start, 0xe4016a78, 0xe3a00000);
+        section_write_word(ios_elf_start, 0xe4007828, 0xe3a00000);
 
-    // Write magic word to disable custom IPC
-    section_write_word(ios_elf_start, 0x050290dc, 0x42424242);
+        // patch MCP syslog debug mode check
+        section_write_word(ios_elf_start, 0x050290d8, 0x20004770);
+
+        // Write magic word to disable custom USB logging IPC
+        section_write_word(ios_elf_start, 0x050290dc, 0x42424242);
+    }
 
     // give us bsp::ee:read permission for PPC
     section_write_word(ios_elf_start, 0xe6044db0, 0x000001F0);
-
-    // patch TEST debug mode check
-    //section_write_word(ios_elf_start, 0xe4016a78, 0xe3a00000);
-    section_write_word(ios_elf_start, 0xe4007828, 0xe3a00000);
 
     // Patch FS to syslog everything
     section_write_word(ios_elf_start, 0x107F5720, ARM_B(0x107F5720, 0x107F0C84));
