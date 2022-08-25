@@ -91,16 +91,6 @@ int _MCP_LoadFile_patch(ipcmessage *msg) {
         replace_target     = LOAD_RPX_TARGET_SD_CARD;
         replace_filesize   = 0; // unknown
         replace_fileoffset = 0;
-    } else if (strncmp(request->name, "safe.rpx", strlen("safe.rpx")) == 0 || strncmp(request->name, "ply.rpx", strlen("ply.rpx")) == 0) {
-        // if we don't explicitly replace files, we do want replace the Health and Safety app with the HBL
-        if (request->pos == 0 && !doWantReplaceRPX) {
-            replace_path   = "wiiu/apps/homebrew_launcher/homebrew_launcher.rpx";
-            replace_target = LOAD_RPX_TARGET_SD_CARD;
-            //doWantReplaceXML = false;
-            doWantReplaceRPX   = true;
-            replace_filesize   = 0; // unknown
-            replace_fileoffset = 0;
-        }
     } else if (!doWantReplaceRPX) {
         doWantReplaceRPX = false; // Only replace it once.
         replace_path     = NULL;
