@@ -91,6 +91,8 @@ int _MCP_LoadFile_patch(ipcmessage *msg) {
         replace_target     = LOAD_RPX_TARGET_SD_CARD;
         replace_filesize   = 0; // unknown
         replace_fileoffset = 0;
+    } else if (strncmp(request->name, "safe.rpx", strlen("safe.rpx")) == 0 || strncmp(request->name, "ply.rpx", strlen("ply.rpx")) == 0) {
+        // Needed to support loading files > 4MiB
     } else if (!doWantReplaceRPX) {
         doWantReplaceRPX = false; // Only replace it once.
         replace_path     = NULL;
