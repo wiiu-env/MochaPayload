@@ -108,7 +108,7 @@ void instant_patches_setup(void) {
 
     // Place the environment path at the end of our .text section.
     for (int i = 0; i < 0x100; i += 4) {
-        *(volatile u32 *) (0x05119F00 - 0x05100000 + 0x13D80000 + i) = *(volatile u32 *) (0x0017FEF0 + i);
+        *(volatile u32 *) (0x0511FF00 - 0x05100000 + 0x13D80000 + i) = *(volatile u32 *) (0x0017FEF0 + i);
     }
 
     // force check USB storage on load
@@ -134,7 +134,7 @@ void instant_patches_setup(void) {
 
     map_info.paddr  = 0x05116000 - 0x05100000 + 0x13D80000;
     map_info.vaddr  = 0x05116000;
-    map_info.size   = 0x4000;
+    map_info.size   = 0xA000;
     map_info.domain = 1; // MCP
     map_info.type   = 3; // 0 = undefined, 1 = kernel only, 2 = read only, 3 = read write
     map_info.cached = 0xFFFFFFFF;

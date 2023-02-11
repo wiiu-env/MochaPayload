@@ -209,3 +209,27 @@ int send(int sockfd, const void *buf, size_t len, int flags) {
     freeIobuf(iobuf);
     return ret;
 }
+
+int setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen) {
+    void *data_buf = svcAllocAlign(0xCAFF, optlen, 0x40);
+    if (!data_buf) return -100;
+
+    u8 *iobuf      = allocIobuf(sizeof(IOSVec) * 2 + sizeof(uint32_t) * 3);
+    iovec_s *iovec = (iovec_s *) iobuf;
+
+    memcpy(data_buf, optval, optlen);
+    iovec[0].ptr = data_buf;
+    iovec[0].len = optlen;
+
+    iovec[1].ptr = iovec;
+    iovec[1].len = sizeof(IOSVec) * 3;
+
+    ((uint32_t *) iovec)[6] = sockfd;
+    ((uint32_t *) iovec)[7] = level;
+    ((uint32_t *) iovec)[8] = optname;
+
+    int ret = svcIoctlv(socket_handle, 0x9, 2, 0, iovec);
+    freeIobuf(iobuf);
+    freeIobuf(data_buf);
+    return ret;
+}

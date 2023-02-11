@@ -22,6 +22,7 @@
  * distribution.
  ***************************************************************************/
 #include "../../common/kernel_commands.h"
+#include "dk.h"
 #include "fsa.h"
 #include "imports.h"
 #include "logger.h"
@@ -31,48 +32,50 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define IOS_ERROR_UNKNOWN_VALUE 0xFFFFFFD6
-#define IOS_ERROR_INVALID_ARG   0xFFFFFFE3
-#define IOS_ERROR_INVALID_SIZE  0xFFFFFFE9
-#define IOS_ERROR_UNKNOWN       0xFFFFFFF7
-#define IOS_ERROR_NOEXISTS      0xFFFFFFFA
+#define IOS_ERROR_UNKNOWN_VALUE  0xFFFFFFD6
+#define IOS_ERROR_INVALID_ARG    0xFFFFFFE3
+#define IOS_ERROR_INVALID_SIZE   0xFFFFFFE9
+#define IOS_ERROR_UNKNOWN        0xFFFFFFF7
+#define IOS_ERROR_NOEXISTS       0xFFFFFFFA
 
-#define IOCTL_MEM_WRITE         0x00
-#define IOCTL_MEM_READ          0x01
-#define IOCTL_SVC               0x02
-#define IOCTL_KILL_SERVER       0x03
-#define IOCTL_MEMCPY            0x04
-#define IOCTL_REPEATED_WRITE    0x05
-#define IOCTL_KERN_READ32       0x06
-#define IOCTL_KERN_WRITE32      0x07
-#define IOCTL_READ_OTP          0x08
+#define IOCTL_MEM_WRITE          0x00
+#define IOCTL_MEM_READ           0x01
+#define IOCTL_SVC                0x02
+#define IOCTL_KILL_SERVER        0x03
+#define IOCTL_MEMCPY             0x04
+#define IOCTL_REPEATED_WRITE     0x05
+#define IOCTL_KERN_READ32        0x06
+#define IOCTL_KERN_WRITE32       0x07
+#define IOCTL_READ_OTP           0x08
 
-#define IOCTL_FSA_OPEN          0x40
-#define IOCTL_FSA_CLOSE         0x41
-#define IOCTL_FSA_MOUNT         0x42
-#define IOCTL_FSA_UNMOUNT       0x43
-#define IOCTL_FSA_GETDEVICEINFO 0x44
-#define IOCTL_FSA_OPENDIR       0x45
-#define IOCTL_FSA_READDIR       0x46
-#define IOCTL_FSA_CLOSEDIR      0x47
-#define IOCTL_FSA_MAKEDIR       0x48
-#define IOCTL_FSA_OPENFILE      0x49
-#define IOCTL_FSA_READFILE      0x4A
-#define IOCTL_FSA_WRITEFILE     0x4B
-#define IOCTL_FSA_STATFILE      0x4C
-#define IOCTL_FSA_CLOSEFILE     0x4D
-#define IOCTL_FSA_SETFILEPOS    0x4E
-#define IOCTL_FSA_GETSTAT       0x4F
-#define IOCTL_FSA_REMOVE        0x50
-#define IOCTL_FSA_REWINDDIR     0x51
-#define IOCTL_FSA_CHDIR         0x52
-#define IOCTL_FSA_RENAME        0x53
-#define IOCTL_FSA_RAW_OPEN      0x54
-#define IOCTL_FSA_RAW_READ      0x55
-#define IOCTL_FSA_RAW_WRITE     0x56
-#define IOCTL_FSA_RAW_CLOSE     0x57
-#define IOCTL_FSA_CHANGEMODE    0x58
-#define IOCTL_FSA_FLUSHVOLUME   0x59
+#define IOCTL_FSA_OPEN           0x40
+#define IOCTL_FSA_CLOSE          0x41
+#define IOCTL_FSA_MOUNT          0x42
+#define IOCTL_FSA_UNMOUNT        0x43
+#define IOCTL_FSA_GETDEVICEINFO  0x44
+#define IOCTL_FSA_OPENDIR        0x45
+#define IOCTL_FSA_READDIR        0x46
+#define IOCTL_FSA_CLOSEDIR       0x47
+#define IOCTL_FSA_MAKEDIR        0x48
+#define IOCTL_FSA_OPENFILE       0x49
+#define IOCTL_FSA_READFILE       0x4A
+#define IOCTL_FSA_WRITEFILE      0x4B
+#define IOCTL_FSA_STATFILE       0x4C
+#define IOCTL_FSA_CLOSEFILE      0x4D
+#define IOCTL_FSA_SETFILEPOS     0x4E
+#define IOCTL_FSA_GETSTAT        0x4F
+#define IOCTL_FSA_REMOVE         0x50
+#define IOCTL_FSA_REWINDDIR      0x51
+#define IOCTL_FSA_CHDIR          0x52
+#define IOCTL_FSA_RENAME         0x53
+#define IOCTL_FSA_RAW_OPEN       0x54
+#define IOCTL_FSA_RAW_READ       0x55
+#define IOCTL_FSA_RAW_WRITE      0x56
+#define IOCTL_FSA_RAW_CLOSE      0x57
+#define IOCTL_FSA_CHANGEMODE     0x58
+#define IOCTL_FSA_FLUSHVOLUME    0x59
+
+#define IOCTLV_DK_PCHAR_ACTIVATE 0x30
 
 static int ipcNodeKilled;
 static u8 threadStack[0x1000] __attribute__((aligned(0x20)));
@@ -384,6 +387,21 @@ static int ipc_ioctl(ipcmessage *message) {
     return res;
 }
 
+static int ipc_ioctlv(ipcmessage *message) {
+    int res = 0;
+
+    switch (message->ioctlv.command) {
+        case IOCTLV_DK_PCHAR_ACTIVATE:
+            res = dkPCHARActivateSmd(message->ioctlv.vecs);
+            break;
+        default:
+            res = IOS_ERROR_INVALID_ARG;
+            break;
+    }
+
+    return res;
+}
+
 static int ipc_thread(void *arg) {
     int res;
     ipcmessage *message;
@@ -417,7 +435,7 @@ static int ipc_thread(void *arg) {
                 }
                 case IOS_IOCTLV: {
                     log_printf("IOS_IOCTLV\n");
-                    res = 0;
+                    res = ipc_ioctlv(message);
                     break;
                 }
                 default: {

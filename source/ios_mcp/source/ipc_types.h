@@ -19,6 +19,11 @@
 #define IOS_RESUME          0x0D
 #define IOS_SVCMSG          0x0E
 
+typedef struct {
+    void *ptr;
+    uint32_t len;
+    uint32_t paddr;
+} IOSVec;
 
 /* IPC message */
 typedef struct ipcmessage {
@@ -61,9 +66,9 @@ typedef struct ipcmessage {
         struct _ioctlv {
             u32 command;
 
-            u32 num_in;
-            u32 num_io;
-            struct _ioctlv *vector;
+            uint32_t num_in;
+            uint32_t num_out;
+            IOSVec *vecs;
         } ioctlv;
     };
 
