@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#define SOL_SOCKET         0xFFFF
+#define SOL_SOCKET         -1
 
 #define PF_UNSPEC          0
 #define PF_INET            2
@@ -30,24 +30,29 @@
 #define SHUT_WR            1
 #define SHUT_RDWR          2
 
-#define SO_DEBUG           0x0001
-#define SO_ACCEPTCONN      0x0002
-#define SO_REUSEADDR       0x0004
-#define SO_KEEPALIVE       0x0008
-#define SO_DONTROUTE       0x0010
-#define SO_BROADCAST       0x0020
-#define SO_USELOOPBACK     0x0040
-#define SO_LINGER          0x0080
-#define SO_OOBINLINE       0x0100
-#define SO_REUSEPORT       0x0200
-#define SO_SNDBUF          0x1001
-#define SO_RCVBUF          0x1002
-#define SO_SNDLOWAT        0x1003
-#define SO_RCVLOWAT        0x1004
-#define SO_SNDTIMEO        0x1005
-#define SO_RCVTIMEO        0x1006
-#define SO_ERROR           0x1007
-#define SO_TYPE            0x1008
+/*
+ * SOL_SOCKET options
+ */
+#define SO_REUSEADDR       0x0004 // reuse address
+#define SO_KEEPALIVE       0x0008 // keep connections alive
+#define SO_BROADCAST       0x0020 // broadcast
+#define SO_LINGER          0x0080 // linger (no effect?)
+#define SO_OOBINLINE       0x0100 // out-of-band data inline (no effect?)
+#define SO_TCPSACK         0x0200 // set tcp selective acknowledgment
+#define SO_WINSCALE        0x0400 // set tcp window scaling
+#define SO_SNDBUF          0x1001 // send buffer size
+#define SO_RCVBUF          0x1002 // receive buffer size
+#define SO_SNDLOWAT        0x1003 // send low-water mark (no effect?)
+#define SO_RCVLOWAT        0x1004 // receive low-water mark
+#define SO_TYPE            0x1008 // get socket type
+#define SO_ERROR           0x1009 // get socket error
+#define SO_RXDATA          0x1011 // get count of bytes in sb_rcv
+#define SO_TXDATA          0x1012 // get count of bytes in sb_snd
+#define SO_NBIO            0x1014 // set socket to NON-blocking mode
+#define SO_BIO             0x1015 // set socket to blocking mode
+#define SO_NONBLOCK        0x1016 // set/get blocking mode via optval param
+
+#define TCP_NODELAY        0x2004
 
 #define INADDR_ANY         0x00000000
 #define INADDR_BROADCAST   0xFFFFFFFF

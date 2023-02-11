@@ -1,5 +1,7 @@
 OUTPUT_ARCH(arm)
 
+INCLUDE "imports.ld"
+
 PROVIDE(snprintf = 0x05059010);
 
 SECTIONS
@@ -22,6 +24,6 @@ SECTIONS
 	}
 }
 
-ASSERT((SIZEOF(.text)) < 0x3F00, "text section is too big");
+ASSERT((SIZEOF(.text)) < 0x9F00, "text section is too big");
 ASSERT((SIZEOF(.bss)) < 0x3000, "bss section is too big");
 

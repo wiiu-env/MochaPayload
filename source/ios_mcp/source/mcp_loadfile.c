@@ -79,9 +79,9 @@ int _MCP_LoadFile_patch(ipcmessage *msg) {
     if (strncmp(request->name, "men.rpx", strlen("men.rpx")) == 0) {
         rpxpath[0] = '\0';
         if (skipPPCSetup) {
-            snprintf(rpxpath, sizeof(rpxpath) - 1, "%s/men.rpx", &((char *) 0x05119F00)[19]); // Copy in environment path
+            snprintf(rpxpath, sizeof(rpxpath) - 1, "%s/men.rpx", &((char *) 0x0511FF00)[19]); // Copy in environment path
         } else {
-            snprintf(rpxpath, sizeof(rpxpath) - 1, "%s/root.rpx", &((char *) 0x05119F00)[19]); // Copy in environment path
+            snprintf(rpxpath, sizeof(rpxpath) - 1, "%s/root.rpx", &((char *) 0x0511FF00)[19]); // Copy in environment path
         }
 
         // At startup we want to hook into the Wii U Menu by replacing the men.rpx with a file from the SD Card
@@ -296,7 +296,7 @@ int _MCP_ioctl100_patch(ipcmessage *msg) {
             }
             case IPC_CUSTOM_COPY_ENVIRONMENT_PATH: {
                 if (msg->ioctl.buffer_io && msg->ioctl.length_io >= 0x100) {
-                    strncpy((char *) msg->ioctl.buffer_io, (void *) 0x05119F00, 0xFF);
+                    strncpy((char *) msg->ioctl.buffer_io, (void *) 0x0511FF00, 0xFF);
                     return 0;
                 } else {
                     return 29;
