@@ -126,8 +126,6 @@ void instant_patches_setup(void) {
     // force check USB storage on load
     *(volatile u32 *) acp_phys(0xE012202C) = 0x00000001; // find USB flag
 
-    // set zero to start thread directly on first title change
-    *(volatile u32 *) mcp_text_phys(0x050BC580) = 0;
     // Patch FS to syslog everything
     *(volatile u32 *) fsa_phys(0x107F5720) = ARM_B(0x107F5720, 0x107F0C84);
 
