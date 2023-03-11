@@ -65,6 +65,26 @@ int _MCP_LoadFile_patch(ipcmessage *msg) {
     int replace_fileoffset           = rep_fileoffset;
     char *replace_path               = rpxpath;
 
+    if (strlen(request->name) > 1 && request->name[0] == '~' && request->name[1] == '|') {
+        // OSDynload_Acquire is cutting of the name right after the last '/'. This means "~/wiiu/libs/test.rpl" would simply become "test.rpl".
+        // To still have directories, Mocha expects '|' instead of '/'. (Modules like the AromaBaseModule might handle this transparent for the user.)
+        // Example: "~|wiiu|libs|test.rpl" would load "sd://wiiu/libs/test.rpl".
+        char *curPtr = &request->name[1];
+        while (*curPtr != '\0') {
+            if (*curPtr == '|') {
+                *curPtr = '/';
+            }
+            curPtr++;
+        }
+        printf("Trying to load %s from sd\n", &request->name[2]);
+        int result = MCP_LoadCustomFile(LOAD_RPX_TARGET_SD_CARD, &request->name[2], 0, 0, msg->ioctl.buffer_io, msg->ioctl.length_io, request->pos);
+
+        if (result >= 0) {
+            return result;
+        }
+        return real_MCP_LoadFile(msg);
+    }
+
     if (strlen(request->name) > 1 && request->name[strlen(request->name) - 1] == 'x') {
         if (strncmp(request->name, "safe.rpx", strlen("safe.rpx")) == 0 || strncmp(request->name, "ply.rpx", strlen("ply.rpx")) == 0) {
             if (request->pos == 0 && replace_valid) {
