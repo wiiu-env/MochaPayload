@@ -38,7 +38,7 @@ u32 mcp_get_phys_code_base(void) {
 void mcp_run_patches(u32 ios_elf_start) {
     // write ios_mcp code and bss
     section_write_bss(ios_elf_start, _bss_start, _bss_end - _bss_start);
-    // We can't use "_text_end" here because we need to copy the full 0x4000 to preserve the envrionmen path which
+    // We can't use "_text_end" here because we need to copy the full 0xA000 bytes to preserve the environment path which
     // is at the end of the .text section.
     section_write(ios_elf_start, _text_start, (void *) mcp_get_phys_code_base(), 0xA000);
 
