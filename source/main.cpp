@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
     if (argc >= 1) {
         if (strncmp(argv[0], "fs:/", 4) == 0) {
             strncpy((char *) 0xF417FEF0, argv[0], 0xFF);
-            DCStoreRange((void *) 0xF417EFF0, 0x100);
+            DCStoreRange((void *) 0xF417FEF0, 0x100);
         }
     }
 
