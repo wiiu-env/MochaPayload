@@ -89,7 +89,7 @@ void instant_patches_setup(void) {
     // fix 10 minute timeout that crashes MCP after 10 minutes of booting
     *(volatile u32 *) mcp_text_phys(0x05022474) = 0xFFFFFFFF; // NEW_TIMEOUT
 
-    kernel_memset((void *) mcp_text_phys(0x050BD000), 0, 0x2F00);
+    kernel_memset((void *) mcp_custom_bss_phys(0x050BD000), 0, 0x3000);
 
     // allow custom bootLogoTex and bootMovie.h264
     *(volatile u32 *) acp_text_phys(0xE0030D68) = 0xE3A00000; // mov r0, #0
