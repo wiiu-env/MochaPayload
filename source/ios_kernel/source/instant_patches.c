@@ -38,10 +38,22 @@ typedef struct {
     u32 type;
     u32 cached;
 } ios_map_shared_info_t;
+#define MCP_CUSTOM_TEXT_LENGTH     0xA000
+#define MCP_CUSTOM_TEXT_START      0x05116000
+#define ENVIRONMENT_PATH_LENGTH    0x100
 
-#define mcp_rodata_phys(addr) ((u32) (addr) -0x05060000 + 0x08220000)
-#define mcp_data_phys(addr)   ((u32) (addr) -0x05074000 + 0x08234000)
-#define acp_phys(addr)        ((u32) (addr) -0xE0000000 + 0x12900000)
+#define mcp_text_phys(addr)        ((u32) (addr) -0x05000000 + 0x081C0000)
+#define mcp_rodata_phys(addr)      ((u32) (addr) -0x05060000 + 0x08220000)
+#define mcp_data_phys(addr)        ((u32) (addr) -0x05074000 + 0x08234000)
+#define acp_phys(addr)             ((u32) (addr) -0xE0000000 + 0x12900000)
+#define fsa_phys(addr)             ((u32) (addr))
+#define kernel_phys(addr)          ((u32) (addr))
+#define acp_text_phys(addr)        ((u32) (addr) -0xE0000000 + 0x12900000)
+#define nimboss_text_phys(addr)    ((u32) (addr) -0xe2000000 + 0x12EC0000)
+#define nimboss_rodata_phys(addr)  ((u32) (addr) -0xe2280000 + 0x13140000)
+#define bsp_data_phys(addr)        ((u32) (addr) -0xe6042000 + 0x13d02000)
+#define mcp_custom_text_phys(addr) ((u32) (addr) -0x05100000 + 0x13D80000)
+#define mcp_custom_bss_phys(addr)  ((u32) (addr) -0x05000000 + 0x081C0000)
 
 void instant_patches_setup(void) {
     // apply IOS ELF launch hook
@@ -51,80 +63,79 @@ void instant_patches_setup(void) {
 
     // Keep patches for backwards compatibility (libiosuhax)
     // patch FSA raw access
-    *(volatile u32 *) 0x1070FAE8 = 0x05812070;
-    *(volatile u32 *) 0x1070FAEC = 0xEAFFFFF9;
+    *(volatile u32 *) fsa_phys(0x1070FAE8) = 0x05812070;
+    *(volatile u32 *) fsa_phys(0x1070FAEC) = 0xEAFFFFF9;
 
     // Add IOCTL 0x28 to indicate the calling client should have full fs permissions
-    *(volatile u32 *) 0x10701248 = _FSA_ioctl0x28_hook;
+    *(volatile u32 *) fsa_phys(0x10701248) = _FSA_ioctl0x28_hook;
 
     // Give clients that called IOCTL 0x28 full permissions
-    *(volatile u32 *) 0x10704540 = ARM_BL(0x10704540, FSA_IOCTLV_HOOK);
-    *(volatile u32 *) 0x107044f0 = ARM_BL(0x107044f0, FSA_IOCTL_HOOK);
-    *(volatile u32 *) 0x10704458 = ARM_BL(0x10704458, FSA_IOS_Close_Hook);
+    *(volatile u32 *) fsa_phys(0x10704540) = ARM_BL(0x10704540, FSA_IOCTLV_HOOK);
+    *(volatile u32 *) fsa_phys(0x107044f0) = ARM_BL(0x107044f0, FSA_IOCTL_HOOK);
+    *(volatile u32 *) fsa_phys(0x10704458) = ARM_BL(0x10704458, FSA_IOS_Close_Hook);
 
     reset_fs_bss();
 
     // patch /dev/odm IOCTL 0x06 to return the disc key if in_buf[0] > 2.
-    *(volatile u32 *) 0x10739948 = 0xe3a0b001; // mov r11, 0x01
-    *(volatile u32 *) 0x1073994C = 0xe3a07020; // mov r7, 0x20
-    *(volatile u32 *) 0x10739950 = 0xea000013; // b LAB_107399a8
+    *(volatile u32 *) fsa_phys(0x10739948) = 0xe3a0b001; // mov r11, 0x01
+    *(volatile u32 *) fsa_phys(0x1073994C) = 0xe3a07020; // mov r7, 0x20
+    *(volatile u32 *) fsa_phys(0x10739950) = 0xea000013; // b LAB_107399a8
 
     int (*_iosMapSharedUserExecution)(void *descr) = (void *) 0x08124F88;
 
     // patch kernel dev node registration
-    *(volatile u32 *) 0x081430B4 = 1;
+    *(volatile u32 *) kernel_phys(0x081430B4) = 1;
 
     // fix 10 minute timeout that crashes MCP after 10 minutes of booting
-    *(volatile u32 *) (0x05022474 - 0x05000000 + 0x081C0000) = 0xFFFFFFFF; // NEW_TIMEOUT
+    *(volatile u32 *) mcp_text_phys(0x05022474) = 0xFFFFFFFF; // NEW_TIMEOUT
 
-    kernel_memset((void *) (0x050BD000 - 0x05000000 + 0x081C0000), 0, 0x2F00);
+    kernel_memset((void *) mcp_text_phys(0x050BD000), 0, 0x2F00);
 
     // allow custom bootLogoTex and bootMovie.h264
-    *(volatile u32 *) (0xE0030D68 - 0xE0000000 + 0x12900000) = 0xE3A00000; // mov r0, #0
-    *(volatile u32 *) (0xE0030D34 - 0xE0000000 + 0x12900000) = 0xE3A00000; // mov r0, #0
+    *(volatile u32 *) acp_text_phys(0xE0030D68) = 0xE3A00000; // mov r0, #0
+    *(volatile u32 *) acp_text_phys(0xE0030D34) = 0xE3A00000; // mov r0, #0
 
     // Patch update check
-    *(volatile u32 *) (0xe22830e0 - 0xe2280000 + 0x13140000) = 0x00000000;
-    *(volatile u32 *) (0xe22b2a78 - 0xe2280000 + 0x13140000) = 0x00000000;
-    *(volatile u32 *) (0xe204fb68 - 0xe2000000 + 0x12EC0000) = 0xe3a00000;
+    *(volatile u32 *) nimboss_rodata_phys(0xe22830e0) = 0x00000000;
+    *(volatile u32 *) nimboss_rodata_phys(0xe22b2a78) = 0x00000000;
+    *(volatile u32 *) nimboss_text_phys(0xe204fb68)   = 0xe3a00000;
 
     // allow any region title launch
-    *(volatile u32 *) (0xE0030498 - 0xE0000000 + 0x12900000) = 0xE3A00000; // mov r0, #0
+    *(volatile u32 *) acp_phys(0xE0030498) = 0xE3A00000; // mov r0, #0
     // Patch CheckTitleLaunch to ignore gamepad connected result
-    *(volatile u32 *) (0xE0030868 - 0xE0000000 + 0x12900000) = 0xE3A00000; // mov r0, #0
+    *(volatile u32 *) acp_phys(0xE0030868) = 0xE3A00000; // mov r0, #0
 
-    *(volatile u32 *) (0x050254D6 - 0x05000000 + 0x081C0000) = THUMB_BL(0x050254D6, MCP_LoadFile_patch);
-    *(volatile u32 *) (0x05025242 - 0x05000000 + 0x081C0000) = THUMB_BL(0x05025242, MCP_ioctl100_patch);
+    *(volatile u32 *) mcp_text_phys(0x050254D6) = THUMB_BL(0x050254D6, MCP_LoadFile_patch);
+    *(volatile u32 *) mcp_text_phys(0x05025242) = THUMB_BL(0x05025242, MCP_ioctl100_patch);
 
-    *(volatile u32 *) (0x0501dd78 - 0x05000000 + 0x081C0000) = THUMB_BL(0x0501dd78, MCP_ReadCOSXml_patch);
-    *(volatile u32 *) (0x051105ce - 0x05000000 + 0x081C0000) = THUMB_BL(0x051105ce, MCP_ReadCOSXml_patch);
+    *(volatile u32 *) mcp_text_phys(0x0501dd78) = THUMB_BL(0x0501dd78, MCP_ReadCOSXml_patch);
+    *(volatile u32 *) mcp_text_phys(0x051105ce) = THUMB_BL(0x051105ce, MCP_ReadCOSXml_patch);
 
     // give us bsp::ee:read permission for PPC
-    *(volatile u32 *) (0xe6044db0 - 0xe6042000 + 0x13d02000) = 0x000001F0;
+    *(volatile u32 *) bsp_data_phys(0xe6044db0) = 0x000001F0;
 
     // patch default title id to system menu
     *(volatile u32 *) mcp_data_phys(0x050B817C) = *(volatile u32 *) 0x0017FFF0;
     *(volatile u32 *) mcp_data_phys(0x050B8180) = *(volatile u32 *) 0x0017FFF4;
 
     // Place the environment path at the end of our .text section.
-    for (int i = 0; i < 0x100; i += 4) {
-        *(volatile u32 *) (0x0511FF00 - 0x05100000 + 0x13D80000 + i) = *(volatile u32 *) (0x0017FEF0 + i);
+    for (int i = 0; i < ENVIRONMENT_PATH_LENGTH; i += 4) {
+        *(volatile u32 *) mcp_custom_text_phys(MCP_CUSTOM_TEXT_START + MCP_CUSTOM_TEXT_LENGTH - ENVIRONMENT_PATH_LENGTH + i) = *(volatile u32 *) (0x0017FEF0 + i);
     }
 
     // force check USB storage on load
     *(volatile u32 *) acp_phys(0xE012202C) = 0x00000001; // find USB flag
 
     // set zero to start thread directly on first title change
-    *(volatile u32 *) (0x050BC580 - 0x05000000 + 0x081C0000) = 0;
-
+    *(volatile u32 *) mcp_text_phys(0x050BC580) = 0;
     // Patch FS to syslog everything
-    *(volatile u32 *) (0x107F5720) = ARM_B(0x107F5720, 0x107F0C84);
+    *(volatile u32 *) fsa_phys(0x107F5720) = ARM_B(0x107F5720, 0x107F0C84);
 
     // Patch MCP to syslog everything
     *(volatile u32 *) (0x05055438 - 0x05100000 + 0x13D80000) = ARM_B(0x05055438, 0x0503dcf8);
 
     ios_map_shared_info_t map_info;
-    map_info.paddr  = 0x050BD000 - 0x05000000 + 0x081C0000;
+    map_info.paddr  = mcp_custom_bss_phys(0x050BD000);
     map_info.vaddr  = 0x050BD000;
     map_info.size   = 0x3000;
     map_info.domain = 1; // MCP
@@ -132,9 +143,9 @@ void instant_patches_setup(void) {
     map_info.cached = 0xFFFFFFFF;
     _iosMapSharedUserExecution(&map_info); // actually a bss section but oh well it will have read/write
 
-    map_info.paddr  = 0x05116000 - 0x05100000 + 0x13D80000;
-    map_info.vaddr  = 0x05116000;
-    map_info.size   = 0xA000;
+    map_info.paddr  = mcp_custom_text_phys(MCP_CUSTOM_TEXT_START);
+    map_info.vaddr  = MCP_CUSTOM_TEXT_START;
+    map_info.size   = MCP_CUSTOM_TEXT_LENGTH;
     map_info.domain = 1; // MCP
     map_info.type   = 3; // 0 = undefined, 1 = kernel only, 2 = read only, 3 = read write
     map_info.cached = 0xFFFFFFFF;
