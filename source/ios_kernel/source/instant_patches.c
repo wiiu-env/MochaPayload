@@ -132,7 +132,7 @@ void instant_patches_setup(void) {
     *(volatile u32 *) fsa_phys(0x107F5720) = ARM_B(0x107F5720, 0x107F0C84);
 
     // Patch MCP to syslog everything
-    *(volatile u32 *) (0x05055438 - 0x05100000 + 0x13D80000) = ARM_B(0x05055438, 0x0503dcf8);
+    *(volatile u32 *) mcp_text_phys(0x05055438) = ARM_B(0x05055438, 0x0503dcf8);
 
     ios_map_shared_info_t map_info;
     map_info.paddr  = mcp_custom_bss_phys(0x050BD000);
