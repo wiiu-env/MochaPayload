@@ -40,12 +40,13 @@ typedef struct {
 } ios_map_shared_info_t;
 #define MCP_CUSTOM_TEXT_LENGTH     0xA000
 #define MCP_CUSTOM_TEXT_START      0x05116000
+#define MCP_CUSTOM_BSS_START       0x050BD000
+#define MCP_CUSTOM_BSS_LENGTH      0x3000
 #define ENVIRONMENT_PATH_LENGTH    0x100
 
 #define mcp_text_phys(addr)        ((u32) (addr) -0x05000000 + 0x081C0000)
 #define mcp_rodata_phys(addr)      ((u32) (addr) -0x05060000 + 0x08220000)
 #define mcp_data_phys(addr)        ((u32) (addr) -0x05074000 + 0x08234000)
-#define acp_phys(addr)             ((u32) (addr) -0xE0000000 + 0x12900000)
 #define fsa_phys(addr)             ((u32) (addr))
 #define kernel_phys(addr)          ((u32) (addr))
 #define acp_text_phys(addr)        ((u32) (addr) -0xE0000000 + 0x12900000)
@@ -89,7 +90,7 @@ void instant_patches_setup(void) {
     // fix 10 minute timeout that crashes MCP after 10 minutes of booting
     *(volatile u32 *) mcp_text_phys(0x05022474) = 0xFFFFFFFF; // NEW_TIMEOUT
 
-    kernel_memset((void *) mcp_custom_bss_phys(0x050BD000), 0, 0x3000);
+    kernel_memset((void *) mcp_custom_bss_phys(0x050BD000), 0, MCP_CUSTOM_BSS_LENGTH);
 
     // allow custom bootLogoTex and bootMovie.h264
     *(volatile u32 *) acp_text_phys(0xE0030D68) = 0xE3A00000; // mov r0, #0
@@ -101,9 +102,9 @@ void instant_patches_setup(void) {
     *(volatile u32 *) nimboss_text_phys(0xe204fb68)   = 0xe3a00000;
 
     // allow any region title launch
-    *(volatile u32 *) acp_phys(0xE0030498) = 0xE3A00000; // mov r0, #0
+    *(volatile u32 *) acp_text_phys(0xE0030498) = 0xE3A00000; // mov r0, #0
     // Patch CheckTitleLaunch to ignore gamepad connected result
-    *(volatile u32 *) acp_phys(0xE0030868) = 0xE3A00000; // mov r0, #0
+    *(volatile u32 *) acp_text_phys(0xE0030868) = 0xE3A00000; // mov r0, #0
 
     *(volatile u32 *) mcp_text_phys(0x050254D6) = THUMB_BL(0x050254D6, MCP_LoadFile_patch);
     *(volatile u32 *) mcp_text_phys(0x05025242) = THUMB_BL(0x05025242, MCP_ioctl100_patch);
@@ -124,7 +125,7 @@ void instant_patches_setup(void) {
     }
 
     // force check USB storage on load
-    *(volatile u32 *) acp_phys(0xE012202C) = 0x00000001; // find USB flag
+    *(volatile u32 *) acp_text_phys(0xE012202C) = 0x00000001; // find USB flag
 
     // Patch FS to syslog everything
     *(volatile u32 *) fsa_phys(0x107F5720) = ARM_B(0x107F5720, 0x107F0C84);
@@ -133,9 +134,9 @@ void instant_patches_setup(void) {
     *(volatile u32 *) mcp_text_phys(0x05055438) = ARM_B(0x05055438, 0x0503dcf8);
 
     ios_map_shared_info_t map_info;
-    map_info.paddr  = mcp_custom_bss_phys(0x050BD000);
-    map_info.vaddr  = 0x050BD000;
-    map_info.size   = 0x3000;
+    map_info.paddr  = mcp_custom_bss_phys(MCP_CUSTOM_BSS_START);
+    map_info.vaddr  = MCP_CUSTOM_BSS_START;
+    map_info.size   = MCP_CUSTOM_BSS_LENGTH;
     map_info.domain = 1; // MCP
     map_info.type   = 3; // 0 = undefined, 1 = kernel only, 2 = read only, 3 = read/write
     map_info.cached = 0xFFFFFFFF;
