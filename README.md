@@ -16,7 +16,7 @@ This a version of the [original mocha](https://github.com/dimok789/mocha) to be 
 
 ## Building
 
-For building you just need [wut](https://github.com/devkitPro/wut/) installed, then use the `make` command.
+For building you just need [wut](https://github.com/devkitPro/wut/), [libmocha](https://github.com/wiiu-env/libmocha), and devkitARM installed, then use the `make` command.
 
 ## Building using the Dockerfile
 
