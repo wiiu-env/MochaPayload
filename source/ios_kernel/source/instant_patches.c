@@ -82,6 +82,57 @@ void instant_patches_setup(void) {
     *(volatile u32 *) fsa_phys(0x1073994C) = 0xe3a07020; // mov r7, 0x20
     *(volatile u32 *) fsa_phys(0x10739950) = 0xea000013; // b LAB_107399a8
 
+    // fat32 driver patches
+    {
+        // patch out fopen in stat
+        *(volatile u32 *) fsa_phys(0x1078c748) = 0xe3a00001; //mov r0, #1
+        // patch out fclose in stat
+        *(volatile u32 *) fsa_phys(0x1078c754) = 0xe3a00000; //mov r0, #0
+        // patch out diropen in stat
+        *(volatile u32 *) fsa_phys(0x1078c71c) = 0xe3a00001; //mov r0, #1
+        // patch out dirclose in stat
+        *(volatile u32 *) fsa_phys(0x1078c728) = 0xe3a00000; //mov r0, #0
+
+        // patch out fopen in readdir
+        *(volatile u32 *) fsa_phys(0x1078b50c) = 0xe3a00001; //mov r0, #1
+
+        // patch out fclose in readdir
+        *(volatile u32 *) fsa_phys(0x1078b518) = 0xe3a00000; //mov r0, #0
+
+        // patch out fopendir in readdir
+        *(volatile u32 *) fsa_phys(0x1078b62c) = 0xe3a00001; //mov r0, #1
+
+        // patch out fclosedir in readdir
+        *(volatile u32 *) fsa_phys(0x1078b638) = 0xe3a00001; //mov r0, #1
+
+        // Avoid opening the file for getting the "alloc_size" in stat and readdir
+        *(volatile u32 *) fsa_phys(0x1078d5b0) = 0xe3a00001; //mov r0, #1 // fopen
+        *(volatile u32 *) fsa_phys(0x1078d738) = 0xe3a00000; //mov r0, #0 // fclose
+        *(volatile u32 *) fsa_phys(0x1078d5c4) = 0xe3a00000; //mov r0, #0 // finfo
+
+        // patch alloc_size to be filesize
+        {
+            // nop some code we don't want
+            *(volatile u32 *) fsa_phys(0x1078d6e8) = 0xea000000; //mov r0, r0
+            *(volatile u32 *) fsa_phys(0x1078d6ec) = 0xea000000; //mov r0, r0
+
+            // set param_2->allocSize = param_3->size;
+            *(volatile u32 *) fsa_phys(0x1078d6f0) = 0xe5db3248; //ldrb r3,[r11,#0x248]
+            *(volatile u32 *) fsa_phys(0x1078d6f4) = 0xe5c93014; //strb r3,[r9,#0x14]
+            *(volatile u32 *) fsa_phys(0x1078d6f8) = 0xe5db3249; //ldrb r3,[r11,#0x249]
+            *(volatile u32 *) fsa_phys(0x1078d6fc) = 0xe5c93015; //strb r3,[r9,#0x15]
+            *(volatile u32 *) fsa_phys(0x1078d700) = 0xe5db324a; //ldrb r3,[r11,#0x24a]
+            *(volatile u32 *) fsa_phys(0x1078d704) = 0xe5c93016; //strb r3,[r9,#0x16]
+            *(volatile u32 *) fsa_phys(0x1078d708) = 0xe5db324b; //ldrb r3,[r11,#0x24b]
+            *(volatile u32 *) fsa_phys(0x1078d70c) = 0xe5c93017; //strb r3,[r9,#0x17]
+
+            // nop previous alloc_size assign
+            *(volatile u32 *) fsa_phys(0x1078d71c) = 0xea000000; //mov r0, r0
+            *(volatile u32 *) fsa_phys(0x1078d720) = 0xea000000; //mov r0, r0
+            *(volatile u32 *) fsa_phys(0x1078d724) = 0xea000000; //mov r0, r0
+        }
+    }
+
     int (*_iosMapSharedUserExecution)(void *descr) = (void *) 0x08124F88;
 
     // patch kernel dev node registration
