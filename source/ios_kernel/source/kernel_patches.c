@@ -122,6 +122,13 @@ void kernel_run_patches(u32 ios_elf_start) {
     section_write(ios_elf_start, (u32) __KERNEL_CODE_START, __KERNEL_CODE_START, __KERNEL_CODE_END - __KERNEL_CODE_START);
     section_write_word(ios_elf_start, 0x0812A120, ARM_BL(0x0812A120, kernel_launch_ios));
 
+    // patch kernel dev node registration flag. Should be 1 anyway but this doesn't hurt.
+    section_write_word(ios_elf_start, 0x081430B4, 1);
+
+    // patch IOS_SetResourceManagerRegistrationDisabled to always keep it enabled
+    section_write_word(ios_elf_start, 0x0812581c, 0xe3a02001);
+    section_write_word(ios_elf_start, 0x08125820, 0xe1a00000);
+
     section_write(ios_elf_start, 0x08140DE0, KERNEL_MCP_IOMAPPINGS_STRUCT, sizeof(KERNEL_MCP_IOMAPPINGS_STRUCT));
 
     // patch /dev/odm IOCTL 0x06 to return the disc key if in_buf[0] > 2.
