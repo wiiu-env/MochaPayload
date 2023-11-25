@@ -74,8 +74,9 @@ int _main() {
     /* Save the request handle so we can reply later */
     *(volatile u32 *) 0x0012F000 = *(volatile u32 *) 0x1016AD18;
 
-    /* Patch kernel_error_handler to BX LR immediately */
-    *(volatile u32 *) 0x08129A24 = 0xE12FFF1E;
+    // patch kernel thread stack check
+    *(volatile uint32_t *) 0x0812c138 = 0xe3a00000; // mov r0, #0
+    *(volatile uint32_t *) 0x0812c13c = 0xe12fff1e; // bx lr
 
     void *pset_fault_behavior = (void *) 0x081298BC;
     kernel_memcpy(pset_fault_behavior, (void *) repairData_set_fault_behavior, sizeof(repairData_set_fault_behavior));
