@@ -1,6 +1,7 @@
 #include "ipc.h"
 
 static int threadsStarted = 0;
+extern void wupserver_init();
 
 int _startMainThread(void) {
     if (threadsStarted == 0) {
