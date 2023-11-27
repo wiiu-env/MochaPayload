@@ -1,28 +1,14 @@
 #ifndef __LOGGER_H_
 #define __LOGGER_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <stdio.h>
 
-#ifdef LOG_IP
-int log_init(unsigned int ip);
-void log_deinit();
-void log_printf(const char *format, ...);
-#else
-#define log_init(x)
-#define log_deinit()
-#define log_printf(x, ...)
-#endif
+#define __FILENAME_X__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
+#define __FILENAME__   (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILENAME_X__)
 
 #define DEBUG_FUNCTION_LINE(FMT, ARGS...)                                                  \
     do {                                                                                   \
-        log_printf("[%23s]%30s@L%04d: " FMT "", __FILE__, __FUNCTION__, __LINE__, ##ARGS); \
+        printf("[%23s]%30s@L%04d: " FMT "", __FILENAME__, __FUNCTION__, __LINE__, ##ARGS); \
     } while (0)
-
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

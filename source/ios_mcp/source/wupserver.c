@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/unistd.h>
+#include <unistd.h>
 
 static int serverKilled;
 static int serverSocket;
@@ -87,7 +89,7 @@ static int serverCommandHandler(u32 *command_buffer, u32 length) {
                 u32 n            = command_buffer[3];
 
                 u32 old = *dst;
-                int i;
+                u32 i;
                 for (i = 0; i < n; i++) {
                     if (*dst != old) {
                         if (*dst == 0x0) old = *dst;
@@ -167,7 +169,7 @@ static void serverListenClients() {
     serverSocket = -1;
 }
 
-static int wupserver_thread(void *arg) {
+static int wupserver_thread() {
     while (ifmgrnclInit() <= 0) {
         //print(0, 0, "opening /dev/net/ifmgr/ncl...");
         usleep(1000);
@@ -192,12 +194,6 @@ static int wupserver_thread(void *arg) {
         usleep(1000);
     }
 
-#ifdef LOG_IP
-    log_init(0xc0a8b2a1);
-#else
-    log_init(0xc0a8b2a1);
-#endif
-
     //print(0, 0, "opened /dev/socket !");
     usleep(5 * 1000 * 1000);
     //print(0, 10, "attempting sockets !");
@@ -211,7 +207,6 @@ static int wupserver_thread(void *arg) {
         usleep(1000 * 1000);
     }
 
-    log_deinit();
     return 0;
 }
 

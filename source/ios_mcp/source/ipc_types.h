@@ -63,7 +63,7 @@ typedef struct ipcmessage {
             u32 *buffer_io;
             u32 length_io;
         } ioctl;
-        struct _ioctlv {
+        struct {
             u32 command;
 
             uint32_t num_in;
