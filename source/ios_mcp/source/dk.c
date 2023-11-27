@@ -255,7 +255,7 @@ static int handleServer(int connfd) {
     return -1;
 }
 
-static int dkThread(void *arg) {
+static int dkThread(void *) {
     printf("DK: thread started\n");
     threadRunning = 1;
 

@@ -23,3 +23,30 @@ char *strncat(char *destination, const char *source, size_t num) {
     // destination string is returned by standard strncat()
     return destination;
 }
+
+char *strchr(const char *p, int ch) {
+    char c;
+
+    c = ch;
+    for (;; ++p) {
+        if (*p == c)
+            return ((char *) p);
+        if (*p == '\0')
+            return (NULL);
+    }
+    /* NOTREACHED */
+}
+
+char *
+strrchr(s, c)
+register const char *s;
+int c;
+{
+    char *rtnval = 0;
+
+    do {
+        if (*s == c)
+            rtnval = (char *) s;
+    } while (*s++);
+    return (rtnval);
+}

@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #define IOS_ERROR_UNKNOWN_VALUE  0xFFFFFFD6
 #define IOS_ERROR_INVALID_ARG    0xFFFFFFE3
@@ -140,7 +141,7 @@ static int ipc_ioctl(ipcmessage *message) {
                 u32 n            = message->ioctl.buffer_in[2];
 
                 u32 old = *dst;
-                int i;
+                u32 i;
                 for (i = 0; i < n; i++) {
                     if (*dst != old) {
                         if (*dst == 0x0) old = *dst;
@@ -402,7 +403,7 @@ static int ipc_ioctlv(ipcmessage *message) {
     return res;
 }
 
-static int ipc_thread(void *arg) {
+static int ipc_thread(void *) {
     int res;
     ipcmessage *message;
     u32 messageQueue[0x10];
@@ -419,27 +420,22 @@ static int ipc_thread(void *arg) {
 
             switch (message->command) {
                 case IOS_OPEN: {
-                    log_printf("IOS_OPEN\n");
                     res = 0;
                     break;
                 }
                 case IOS_CLOSE: {
-                    log_printf("IOS_CLOSE\n");
                     res = 0;
                     break;
                 }
                 case IOS_IOCTL: {
-                    log_printf("IOS_IOCTL\n");
                     res = ipc_ioctl(message);
                     break;
                 }
                 case IOS_IOCTLV: {
-                    log_printf("IOS_IOCTLV\n");
                     res = ipc_ioctlv(message);
                     break;
                 }
                 default: {
-                    log_printf("unexpected command 0x%X\n", message->command);
                     res = IOS_ERROR_UNKNOWN_VALUE;
                     break;
                 }

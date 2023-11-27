@@ -26,116 +26,121 @@
 #include <mocha/commands.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/unistd.h>
+#include <unistd.h>
 
-int (*const real_MCP_LoadFile)(ipcmessage *msg)                                                                                                      = (void *) 0x0501CAA8 + 1; //+1 for thumb
-int (*const MCP_DoLoadFile)(const char *path, const char *path2, void *outputBuffer, uint32_t outLength, uint32_t pos, int *bytesRead, uint32_t unk) = (void *) 0x05017248 + 1;
+static int
+MCP_LoadCustomFile(int target, char *path, uint32_t filesize, uint32_t fileoffset, void *buffer_out,
+                   uint32_t buffer_len,
+                   uint32_t pos, bool isRPX);
 
-static int MCP_LoadCustomFile(int target, char *path, int filesize, int fileoffset, void *out_buffer, int buffer_len, int pos);
+int (*const real_MCP_LoadFile)(ipcmessage *msg) = (int (*)(ipcmessage *))(0x0501CAA8 + 1); //+1 for thumb
+int (*const MCP_DoLoadFile)(const char *path,
+                            const char *path2,
+                            void *outputBuffer,
+                            uint32_t outLength,
+                            uint32_t pos,
+                            int *bytesRead,
+                            uint32_t unk)       = (int (*)(const char *,
+                                                     const char *,
+                                                     void *,
+                                                     uint32_t,
+                                                     uint32_t,
+                                                     int *,
+                                                     uint32_t))(0x05017248 + 1);
 
-static bool replace_valid         = false;
-static bool skipPPCSetup          = false;
-static bool doWantReplaceRPX      = false;
-static bool replace_target_device = 0;
-static uint32_t rep_filesize      = 0;
-static uint32_t rep_fileoffset    = 0;
-static char rpxpath[256];
+typedef enum {
+    REPLACEMENT_TYPE_INVALID                              = 0,
+    REPLACEMENT_TYPE_HOMEBREW_RPX                         = 1,
+    REPLACEMENT_TYPE_HOMEBREW_RPL                         = 2,
+    REPLACEMENT_TYPE_BY_PATH                              = 3,
+    REPLACEMENT_TYPE_UNTIL_MEM_HOOK_COMPLETED_BUT_BY_PATH = 4,
+} ReplacementType;
 
-#define log(fmt, ...) log_printf("%s: " fmt, __FUNCTION__, __VA_ARGS__)
-#define FAIL_ON(cond, val)         \
-    if (cond) {                    \
-        log(#cond " (%08X)", val); \
-        return 29;                 \
-    }
+typedef enum {
+    REPLACEMENT_LIFETIME_INVALID                = 0,
+    REPLACEMENT_LIFETIME_UNLIMITED              = 1,
+    REPLACEMENT_LIFETIME_ONE_RPX_LAUNCH         = 2,
+    REPLACEMENT_LIFETIME_DURING_RPX_REPLACEMENT = 3,
+} ReplacementLifetime;
 
-int _MCP_LoadFile_patch(ipcmessage *msg) {
+typedef enum {
+    PATH_RELATIVE_INVALID        = 0,
+    PATH_RELATIVE_TO_ENVIRONMENT = 1,
+    PATH_RELATIVE_TO_SD_ROOT     = 2,
+} PathRelativeTo;
 
-    FAIL_ON(!msg->ioctl.buffer_in, 0);
-    FAIL_ON(msg->ioctl.length_in != 0x12D8, msg->ioctl.length_in);
-    FAIL_ON(!msg->ioctl.buffer_io, 0);
-    FAIL_ON(!msg->ioctl.length_io, 0);
+typedef struct RPXFileReplacements {
+    ReplacementType type;
+    ReplacementLifetime lifetime;
+    char replaceName[0x40];
+    char replacementPath[256];
+    PathRelativeTo relativeTo;
+    uint32_t fileSize;
+    uint32_t fileOffset;
+    uint32_t ageInApplicationStarts;
+} RPXFileReplacements;
 
-    MCPLoadFileRequest *request = (MCPLoadFileRequest *) msg->ioctl.buffer_in;
+static bool gMemHookCompleted = false;
+static bool sReplacedLastRPX  = false;
 
-    //dumpHex(request, sizeof(MCPLoadFileRequest));
-    //DEBUG_FUNCTION_LINE("msg->ioctl.buffer_io = %p, msg->ioctl.length_io = 0x%X\n", msg->ioctl.buffer_io, msg->ioctl.length_io);
-    //DEBUG_FUNCTION_LINE("request->type = %d, request->pos = %d, request->name = \"%s\"\n", request->type, request->pos, request->name);
+static const RPXFileReplacements gDefaultReplacements[] = {
+        // Redirect men.rpx [ENVIRONMENT]/root.rpx until IPC_CUSTOM_MEN_RPX_HOOK_COMPLETED has been called. (e.g. to init PPC homebrew after iosu-reload)
+        {REPLACEMENT_TYPE_UNTIL_MEM_HOOK_COMPLETED_BUT_BY_PATH, REPLACEMENT_LIFETIME_UNLIMITED, "men.rpx", "root.rpx", PATH_RELATIVE_TO_ENVIRONMENT, 0, 0, 0},
+        // Redirect men.rpx to [ENVIRONMENT]/men.rpx
+        {REPLACEMENT_TYPE_BY_PATH, REPLACEMENT_LIFETIME_UNLIMITED, "men.rpx", "men.rpx", PATH_RELATIVE_TO_ENVIRONMENT, 0, 0, 0},
+};
 
-    LoadRPXTargetEnum replace_target = replace_target_device;
-    int replace_filesize             = rep_filesize;
-    int replace_fileoffset           = rep_fileoffset;
-    char *replace_path               = rpxpath;
+static RPXFileReplacements *gDynamicReplacements[5] = {};
 
-    if (strlen(request->name) > 1 && request->name[0] == '~' && request->name[1] == '|') {
-        // OSDynload_Acquire is cutting of the name right after the last '/'. This means "~/wiiu/libs/test.rpl" would simply become "test.rpl".
-        // To still have directories, Mocha expects '|' instead of '/'. (Modules like the AromaBaseModule might handle this transparent for the user.)
-        // Example: "~|wiiu|libs|test.rpl" would load "sd://wiiu/libs/test.rpl".
-        char *curPtr = &request->name[1];
-        while (*curPtr != '\0') {
-            if (*curPtr == '|') {
-                *curPtr = '/';
-            }
-            curPtr++;
+// should be at least the size of gDefaultReplacements and gDynamicReplacements
+#define TEMP_ARRAY_SIZE 7
+
+bool addDynamicReplacement(RPXFileReplacements *pReplacements) {
+    for (uint32_t i = 0; i < sizeof(gDynamicReplacements) / sizeof(gDynamicReplacements[0]); i++) {
+        if (gDynamicReplacements[i] == NULL) {
+            gDynamicReplacements[i] = pReplacements;
+            return true;
         }
-        printf("Trying to load %s from sd\n", &request->name[2]);
-        int result = MCP_LoadCustomFile(LOAD_RPX_TARGET_SD_CARD, &request->name[2], 0, 0, msg->ioctl.buffer_io, msg->ioctl.length_io, request->pos);
-
-        if (result >= 0) {
-            return result;
-        }
-        return real_MCP_LoadFile(msg);
     }
-
-    if (strlen(request->name) > 1 && request->name[strlen(request->name) - 1] == 'x') {
-        if (strncmp(request->name, "safe.rpx", strlen("safe.rpx")) == 0 || strncmp(request->name, "ply.rpx", strlen("ply.rpx")) == 0) {
-            if (request->pos == 0 && replace_valid) {
-                //DEBUG_FUNCTION_LINE("set doWantReplaceRPX to true\n");
-                doWantReplaceRPX = true;
-            }
-        } else {
-            //DEBUG_FUNCTION_LINE("set replace_valid to false\n");
-            replace_valid = false;
-        }
-    }
-    if (strncmp(request->name, "men.rpx", strlen("men.rpx")) == 0) {
-        rpxpath[0] = '\0';
-        if (skipPPCSetup) {
-            snprintf(rpxpath, sizeof(rpxpath) - 1, "%s/men.rpx", &((char *) 0x0511FF00)[19]); // Copy in environment path
-        } else {
-            snprintf(rpxpath, sizeof(rpxpath) - 1, "%s/root.rpx", &((char *) 0x0511FF00)[19]); // Copy in environment path
-        }
-
-        // At startup we want to hook into the Wii U Menu by replacing the men.rpx with a file from the SD Card
-        // The replacement may restart the application to execute a kernel exploit.
-        // The men.rpx is hooked until the "IPC_CUSTOM_MEN_RPX_HOOK_COMPLETED" command is passed to IOCTL 0x100.
-        // If the loading of the replacement file fails, the Wii U Menu is loaded normally.
-        replace_target     = LOAD_RPX_TARGET_SD_CARD;
-        replace_filesize   = 0; // unknown
-        replace_fileoffset = 0;
-    } else if (strncmp(request->name, "safe.rpx", strlen("safe.rpx")) == 0 || strncmp(request->name, "ply.rpx", strlen("ply.rpx")) == 0) {
-        // Needed to support loading files > 4MiB
-    } else if (!doWantReplaceRPX) {
-        doWantReplaceRPX = false; // Only replace it once.
-        replace_path     = NULL;
-        return real_MCP_LoadFile(msg);
-    }
-
-    if (replace_path != NULL && strlen(replace_path) > 0) {
-        doWantReplaceRPX = false; // Only replace it once.
-        int result       = MCP_LoadCustomFile(replace_target, replace_path, replace_filesize, replace_fileoffset, msg->ioctl.buffer_io, msg->ioctl.length_io, request->pos);
-
-        if (result >= 0) {
-            return result;
-        }
-    } else {
-        DEBUG_FUNCTION_LINE("replace_path was NULL\n");
-    }
-
-    return real_MCP_LoadFile(msg);
+    DEBUG_FUNCTION_LINE("Failed to find empty slot!\n");
+    return false;
 }
 
+void RemoveByLifetime(ReplacementLifetime lifetime) {
+    for (uint32_t i = 0; i < sizeof(gDynamicReplacements) / sizeof(gDynamicReplacements[0]); i++) {
+        if (gDynamicReplacements[i] != NULL && gDynamicReplacements[i]->lifetime == lifetime) {
+            // We DON'T want to remove new entries which had the chance to be used
+            // There are intended to be used for the NEXT application start.
+            if (lifetime == REPLACEMENT_LIFETIME_DURING_RPX_REPLACEMENT &&
+                gDynamicReplacements[i]->ageInApplicationStarts == 0) {
+                continue;
+            }
+            /*DEBUG_FUNCTION_LINE("Remove item %p: lifetime: %d type: %d replace: %s replaceWith: %s\n",
+                                gDynamicReplacements[i], gDynamicReplacements[i]->lifetime,
+                                gDynamicReplacements[i]->type, gDynamicReplacements[i]->replaceName,
+                                gDynamicReplacements[i]->replacementPath);*/
+            svcFree(0xCAFF, gDynamicReplacements[i]);
+            gDynamicReplacements[i] = NULL;
+        }
+    }
+}
+
+static inline int EndsWith(const char *str, const char *suffix) {
+    if (!str || !suffix)
+        return 0;
+    size_t lenstr    = strlen(str);
+    size_t lensuffix = strlen(suffix);
+    if (lensuffix > lenstr)
+        return 0;
+    return strncmp(str + lenstr - lensuffix, suffix, lensuffix) == 0;
+}
 
 // Set filesize to 0 if unknown.
-static int MCP_LoadCustomFile(int target, char *path, int filesize, int fileoffset, void *buffer_out, int buffer_len, int pos) {
+static int
+MCP_LoadCustomFile(int target, char *path, uint32_t filesize, uint32_t fileoffset, void *buffer_out,
+                   uint32_t buffer_len,
+                   uint32_t pos, bool isRPX) {
     if (path == NULL || (filesize > 0 && (pos > filesize))) {
         return 0;
     }
@@ -147,8 +152,8 @@ static int MCP_LoadCustomFile(int target, char *path, int filesize, int fileoffs
     char mountpath[] = "/vol/storage_iosu_homebrew";
 
     if (target == LOAD_RPX_TARGET_SD_CARD) {
-        int fsa_h     = svcOpen("/dev/fsa", 0);
-        int mount_res = FSA_Mount(fsa_h, "/dev/sdcard01", mountpath, 2, NULL, 0);
+        int fsa_h = svcOpen("/dev/fsa", 0);
+        FSA_Mount(fsa_h, "/dev/sdcard01", mountpath, 2, NULL, 0);
         svcClose(fsa_h);
 
         strncpy(filepath, mountpath, sizeof(filepath) - 1);
@@ -160,7 +165,7 @@ static int MCP_LoadCustomFile(int target, char *path, int filesize, int fileoffs
 
     int bytesRead = 0;
     int result    = MCP_DoLoadFile(filepath, NULL, buffer_out, buffer_len, pos + fileoffset, &bytesRead, 0);
-    //log("MCP_DoLoadFile returned %d, bytesRead = %d pos %d \n", result, bytesRead, pos + fileoffset);
+    // DEBUG_FUNCTION_LINE("MCP_DoLoadFile returned %d, bytesRead = %d pos %u\n", result, bytesRead, pos + fileoffset);
 
     if (result >= 0) {
         if (bytesRead <= 0) {
@@ -174,13 +179,264 @@ static int MCP_LoadCustomFile(int target, char *path, int filesize, int fileoffs
         }
     }
 
-    if (result < 0x400000 && target == LOAD_RPX_TARGET_SD_CARD) {
-        int fsa_h       = svcOpen("/dev/fsa", 0);
-        int unmount_res = FSA_Unmount(fsa_h, mountpath, 0x80000002);
-        svcClose(fsa_h);
+    // Unmount the sd card once the whole file has been read.
+    if (result >= 0 && result < 0x400000) {
+        if (target == LOAD_RPX_TARGET_SD_CARD) {
+            int fsa_h = svcOpen("/dev/fsa", 0);
+            FSA_Unmount(fsa_h, mountpath, 0x80000002);
+            svcClose(fsa_h);
+        }
+        if (isRPX) {
+            // if we have read less than 0x400000 bytes we have read the whole file.
+            // We can now remove the replacements with "one launch" lifetime
+            RemoveByLifetime(REPLACEMENT_LIFETIME_ONE_RPX_LAUNCH);
+        }
     }
 
     return result;
+}
+
+int DoSDRedirectionByPath(ipcmessage *msg, MCPLoadFileRequest *request) {
+    if (strlen(request->name) > 1 && request->name[0] == '~' && request->name[1] == '|') {
+        // OSDynload_Acquire is cutting of the name right after the last '/'. This means "~/wiiu/libs/test.rpl" would simply become "test.rpl".
+        // To still have directories, Mocha expects '|' instead of '/'. (Modules like the AromaBaseModule might handle this transparent for the user.)
+        // Example: "~|wiiu|libs|test.rpl" would load "sd://wiiu/libs/test.rpl".
+        char *curPtr = &request->name[1];
+        while (*curPtr != '\0') {
+            if (*curPtr == '|') {
+                *curPtr = '/';
+            }
+            curPtr++;
+        }
+        // DEBUG_FUNCTION_LINE("Trying to load %s from sd\n", &request->name[2]);
+        int result = MCP_LoadCustomFile(LOAD_RPX_TARGET_SD_CARD, &request->name[2], 0, 0, msg->ioctl.buffer_io,
+                                        msg->ioctl.length_io, request->pos, EndsWith(request->name, ".rpx"));
+
+        if (result >= 0) {
+            return result;
+        } else {
+            DEBUG_FUNCTION_LINE("Failed: result was %d\n", result);
+        }
+        return real_MCP_LoadFile(msg);
+    }
+    return -1;
+}
+
+bool isCurrentHomebrewWrapperReplacement(MCPLoadFileRequest *request) {
+    if ((strncmp("ply.rpx", request->name, strlen("ply.rpx")) == 0) ||
+        (strncmp("safe.rpx", request->name, strlen("safe.rpx")) == 0)) {
+        return true;
+    }
+    return false;
+}
+
+const RPXFileReplacements *GetCurrentRPXReplacementEx(MCPLoadFileRequest *request, const RPXFileReplacements **list, uint32_t list_size) {
+    for (uint32_t i = 0; i < list_size; i++) {
+        const RPXFileReplacements *cur = list[i];
+        if (cur == NULL || cur->lifetime == REPLACEMENT_LIFETIME_INVALID) {
+            continue;
+        }
+        bool valid = false;
+        switch (cur->type) {
+            case REPLACEMENT_TYPE_HOMEBREW_RPX: {
+                // DEBUG_FUNCTION_LINE("Check REPLACEMENT_TYPE_HOMEBREW_RPX for %s... ", cur->replacementPath);
+                if (isCurrentHomebrewWrapperReplacement(request)) {
+                    // printf("Yay!\n");
+                    valid = true;
+                } else {
+                    // printf("No :(!\n");
+                }
+                break;
+            }
+            case REPLACEMENT_TYPE_HOMEBREW_RPL:
+                // DEBUG_FUNCTION_LINE("Check REPLACEMENT_TYPE_HOMEBREW_RPL for %s (%s) == %s (sReplacedLastRPX %d)... ", cur->replaceName,
+                //                    cur->replacementPath, request->name, sReplacedLastRPX);
+                if (sReplacedLastRPX && strncmp(cur->replaceName, request->name, sizeof(request->name) - 1) == 0) {
+                    // printf("Yay!\n");
+                    valid = true;
+                } else {
+                    // printf("No :(!\n");
+                }
+                break;
+            case REPLACEMENT_TYPE_BY_PATH:
+                // DEBUG_FUNCTION_LINE("Check REPLACEMENT_TYPE_BY_PATH for %s (%s) == %s... ", cur->replaceName,
+                //                    cur->replacementPath, request->name);
+                if (strncmp(cur->replaceName, request->name, sizeof(request->name) - 1) == 0) {
+                    // printf("Yay!\n");
+                    valid = true;
+                } else {
+                    // printf("No :(!\n");
+                }
+                break;
+            case REPLACEMENT_TYPE_UNTIL_MEM_HOOK_COMPLETED_BUT_BY_PATH:
+                // DEBUG_FUNCTION_LINE("Check REPLACEMENT_TYPE_UNTIL_MEM_HOOK_COMPLETED_BUT_BY_PATH for %s (%s) == %s... ", cur->replaceName,
+                //                    cur->replacementPath, request->name);
+                if (strncmp(cur->replaceName, request->name, sizeof(request->name) - 1) == 0 && !gMemHookCompleted) {
+                    // printf("Yay!\n");
+                    valid = true;
+                } else {
+                    // printf("No :(!\n");
+                }
+                break;
+            case REPLACEMENT_TYPE_INVALID:
+                DEBUG_FUNCTION_LINE("REPLACEMENT_TYPE_INVALID\n");
+                break;
+        }
+        if (valid) {
+            return cur;
+        }
+    }
+    return NULL;
+}
+
+static uint32_t getReplacementDataInSingleArray(const RPXFileReplacements **tmpArray, uint32_t tmpArraySize) {
+    uint32_t offsetInResult = 0;
+    for (uint32_t i = 0; i < sizeof(gDefaultReplacements) / sizeof(gDefaultReplacements[0]); i++) {
+        if (offsetInResult >= tmpArraySize) {
+            DEBUG_FUNCTION_LINE("ELEMENTS DO NOT FIT INTO ARRAY");
+            return offsetInResult;
+        }
+        if (gDefaultReplacements[i].lifetime != REPLACEMENT_LIFETIME_INVALID) {
+            tmpArray[offsetInResult] = &gDefaultReplacements[i];
+            offsetInResult++;
+        }
+    }
+
+    for (uint32_t i = 0; i < sizeof(gDynamicReplacements) / sizeof(gDynamicReplacements[0]); i++) {
+        if (offsetInResult >= tmpArraySize) {
+            DEBUG_FUNCTION_LINE("ELEMENTS DO NOT FIT INTO ARRAY");
+            return offsetInResult;
+        }
+        if (gDynamicReplacements[i] != NULL) {
+            tmpArray[offsetInResult] = gDynamicReplacements[i];
+            offsetInResult++;
+        }
+    }
+    return offsetInResult;
+}
+
+const RPXFileReplacements *GetCurrentRPXReplacement(MCPLoadFileRequest *request) {
+    const RPXFileReplacements *tmpArray[TEMP_ARRAY_SIZE] = {};
+    uint32_t elementsInArray                             = getReplacementDataInSingleArray(tmpArray, TEMP_ARRAY_SIZE);
+    if (elementsInArray == 0) {
+        return NULL;
+    }
+
+    return GetCurrentRPXReplacementEx(request, tmpArray, elementsInArray);
+}
+
+int DoReplacementByStruct(ipcmessage *msg, MCPLoadFileRequest *request, const RPXFileReplacements *curReplacement) {
+    char _rpxpath[256] = {};
+
+    int target = -1;
+    if (curReplacement->relativeTo == PATH_RELATIVE_TO_ENVIRONMENT) {
+        char *environmentPath = &((char *) 0x0511FF00)[19];
+        snprintf(_rpxpath, sizeof(_rpxpath) - 1, "%s/%s", environmentPath, curReplacement->replacementPath); // Copy in environment path
+        target = LOAD_RPX_TARGET_SD_CARD;
+    } else if (curReplacement->relativeTo == PATH_RELATIVE_TO_SD_ROOT) {
+        strncpy(_rpxpath, curReplacement->replacementPath, sizeof(_rpxpath) - 1);
+        target = LOAD_RPX_TARGET_SD_CARD;
+    } else {
+        DEBUG_FUNCTION_LINE("Unknown relativeTo: %d\n", curReplacement->relativeTo);
+        return -1;
+    }
+
+    DEBUG_FUNCTION_LINE("Load custom file %s\n", _rpxpath);
+    return MCP_LoadCustomFile(target,
+                              _rpxpath,
+                              curReplacement->fileSize,
+                              curReplacement->fileOffset,
+                              msg->ioctl.buffer_io,
+                              msg->ioctl.length_io,
+                              request->pos, EndsWith(request->name, ".rpx"));
+}
+
+int MCPLoadFileReplacement(ipcmessage *msg, MCPLoadFileRequest *request) {
+    int res;
+
+    if ((res = DoSDRedirectionByPath(msg, request)) >= 0) {
+        // DEBUG_FUNCTION_LINE("We replaced by path!\n");
+        return res;
+    }
+
+    const RPXFileReplacements *curReplacement = GetCurrentRPXReplacement(request);
+    if (curReplacement == NULL) {
+        // DEBUG_FUNCTION_LINE("Couldn't find replacement for %s!\n", request->name);
+        return -1;
+    }
+
+    if ((res = DoReplacementByStruct(msg, request, curReplacement)) >= 0) {
+        return res;
+    }
+
+    return res;
+}
+
+void IncreaseApplicationStartCounter() {
+    for (uint32_t i = 0; i < sizeof(gDynamicReplacements) / sizeof(gDynamicReplacements[0]); i++) {
+        if (gDynamicReplacements[i] != NULL) {
+            gDynamicReplacements[i]->ageInApplicationStarts++;
+        }
+    }
+}
+
+bool hasHomebrewReplacementsEx(const RPXFileReplacements **list, uint32_t list_size) {
+    for (uint32_t i = 0; i < list_size; i++) {
+        const RPXFileReplacements *cur = list[i];
+        if (cur != NULL && cur->type != REPLACEMENT_TYPE_INVALID) {
+            if (cur->type == REPLACEMENT_TYPE_HOMEBREW_RPX) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool hasHomebrewReplacements() {
+    const RPXFileReplacements *tmpArray[TEMP_ARRAY_SIZE] = {};
+    uint32_t elementsInArray                             = getReplacementDataInSingleArray(tmpArray, TEMP_ARRAY_SIZE);
+    if (elementsInArray == 0) {
+        return false;
+    }
+
+    if (!hasHomebrewReplacementsEx(tmpArray, elementsInArray)) {
+        // DEBUG_FUNCTION_LINE("Has no homebrew replacements\n");
+        return false;
+    }
+    return true;
+}
+
+int _MCP_LoadFile_patch(ipcmessage *msg) {
+    MCPLoadFileRequest *request = (MCPLoadFileRequest *) msg->ioctl.buffer_in;
+
+    // we only care about Foreground app/COS-MASTER for now.
+    if (request->cafe_pid != 7) {
+        // DEBUG_FUNCTION_LINE("Not for pid 7, lets ignore\n");
+        return real_MCP_LoadFile(msg);
+    }
+
+    bool requestIsRPX = EndsWith(request->name, ".rpx");
+
+    // Check if a fresh RPX is loaded
+    if (request->pos == 0 && requestIsRPX) {
+        // DEBUG_FUNCTION_LINE("fresh RPX load\n");
+        // Remove any old replacements that should only survive one RPX replacement
+        RemoveByLifetime(REPLACEMENT_LIFETIME_DURING_RPX_REPLACEMENT);
+        // Increase of the all replacements when we load a new RPX!
+        IncreaseApplicationStartCounter();
+        sReplacedLastRPX = false;
+    }
+
+    int res;
+    if ((res = MCPLoadFileReplacement(msg, request)) >= 0) {
+        if (requestIsRPX) {
+            sReplacedLastRPX = true;
+        }
+        return res;
+    }
+
+    res = real_MCP_LoadFile(msg);
+    return res;
 }
 
 int _MCP_ReadCOSXml_patch(uint32_t u1, uint32_t u2, MCPPPrepareTitleInfo *xmlData) {
@@ -210,7 +466,7 @@ int _MCP_ReadCOSXml_patch(uint32_t u1, uint32_t u2, MCPPPrepareTitleInfo *xmlDat
     }
 
     // if we replace the RPX we want to increase the max_codesize and give us full permission!
-    if (replace_valid) {
+    if (hasHomebrewReplacements()) {
         if (xmlData->titleId == 0x000500101004E000 || // H&S
             xmlData->titleId == 0x000500101004E100 ||
             xmlData->titleId == 0x000500101004E200 ||
@@ -245,7 +501,7 @@ int _MCP_ReadCOSXml_patch(uint32_t u1, uint32_t u2, MCPPPrepareTitleInfo *xmlDat
 
     // When the PPC Kernel reboots we replace the men.rpx to set up our PPC side again
     // for this the Wii U Menu temporarily gets replaced by our root.rpx and needs code gen access
-    if (!skipPPCSetup) {
+    if (!gMemHookCompleted) {
         if (xmlData->titleId == 0x0005001010040000 ||
             xmlData->titleId == 0x0005001010040100 ||
             xmlData->titleId == 0x0005001010040200) {
@@ -264,45 +520,50 @@ extern int _startMainThread(void);
 /*  RPX replacement! Call this ioctl to replace the next loaded RPX with an arbitrary path.
     DO NOT RETURN 0, this affects the codepaths back in the IOSU code */
 int _MCP_ioctl100_patch(ipcmessage *msg) {
-    FAIL_ON(!msg->ioctl.buffer_in, 0);
-    FAIL_ON(!msg->ioctl.length_in, 0);
-
     if (msg->ioctl.buffer_in && msg->ioctl.length_in >= 4) {
         int command = msg->ioctl.buffer_in[0];
 
         switch (command) {
             case IPC_CUSTOM_MEN_RPX_HOOK_COMPLETED: {
-                DEBUG_FUNCTION_LINE("IPC_CUSTOM_MEN_RPX_HOOK_COMPLETED\n");
-                skipPPCSetup = true;
+                gMemHookCompleted = true;
                 break;
             }
             case IPC_CUSTOM_LOAD_CUSTOM_RPX: {
-                DEBUG_FUNCTION_LINE("IPC_CUSTOM_LOAD_CUSTOM_RPX\n");
-
-                if (msg->ioctl.length_in >= 0x110) {
+                if (msg->ioctl.length_in >= sizeof(MochaRPXLoadInfo) + 4) {
                     int target = msg->ioctl.buffer_in[0x04 / 0x04];
                     if (target == LOAD_RPX_TARGET_EXTRA_REVERT_PREPARE) {
-                        doWantReplaceRPX = false;
-                        replace_valid    = false;
                         return 0;
                     }
                     if (target != LOAD_RPX_TARGET_SD_CARD) {
                         return 29;
                     }
-                    int filesize   = msg->ioctl.buffer_in[0x08 / 0x04];
-                    int fileoffset = msg->ioctl.buffer_in[0x0C / 0x04];
-                    char *str_ptr  = (char *) &msg->ioctl.buffer_in[0x10 / 0x04];
-                    memset(rpxpath, 0, sizeof(rpxpath));
+                    uint32_t filesize   = msg->ioctl.buffer_in[0x08 / 0x04];
+                    uint32_t fileoffset = msg->ioctl.buffer_in[0x0C / 0x04];
+                    char *str_ptr       = (char *) &msg->ioctl.buffer_in[0x10 / 0x04];
 
-                    strncpy(rpxpath, str_ptr, 256 - 1);
+                    RPXFileReplacements *newReplacement = svcAlloc(0xCAFF, sizeof(RPXFileReplacements));
+                    if (newReplacement == NULL) {
+                        DEBUG_FUNCTION_LINE("Failed to allocate memory on heap\n");
+                        return 22;
+                    }
 
-                    rep_filesize     = filesize;
-                    rep_fileoffset   = fileoffset;
-                    doWantReplaceRPX = true;
-                    //doWantReplaceXML = true;
-                    replace_valid = true;
+                    memset(newReplacement, 0, sizeof(*newReplacement));
 
-                    DEBUG_FUNCTION_LINE("Will load %s for next title from target: %d (offset %d, filesize %d)\n", rpxpath, target, rep_fileoffset, rep_filesize);
+                    strncpy(newReplacement->replacementPath, str_ptr, sizeof(newReplacement->replacementPath) - 1);
+                    newReplacement->fileOffset = fileoffset;
+                    newReplacement->fileSize   = filesize;
+                    newReplacement->lifetime   = REPLACEMENT_LIFETIME_ONE_RPX_LAUNCH;
+                    newReplacement->relativeTo = PATH_RELATIVE_TO_SD_ROOT;
+                    newReplacement->type       = REPLACEMENT_TYPE_HOMEBREW_RPX;
+
+                    if (!addDynamicReplacement(newReplacement)) {
+                        DEBUG_FUNCTION_LINE("addDynamicReplacement failed, abort redirecting %s\n", newReplacement->replacementPath);
+                        svcFree(0xCAFF, newReplacement);
+                        return 22;
+                    }
+
+                    DEBUG_FUNCTION_LINE("Will load %s for next title from target: %d (offset %u, filesize %u)\n",
+                                        newReplacement->replacementPath, target, fileoffset, filesize);
                     return 0;
                 } else {
                     return 29;
