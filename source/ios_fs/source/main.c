@@ -1,34 +1,14 @@
+#include "fsa.h"
 #include "ipc_types.h"
-#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 
-typedef struct __attribute__((packed)) {
-    uint32_t initialized;
-    uint64_t titleId;
-    uint32_t processId;
-    uint32_t groupId;
-    uint32_t unk0;
-    uint64_t capabilityMask;
-    uint8_t unk1[0x4518];
-    char unk2[0x280];
-    char unk3[0x280];
-    void *mutex;
-} FSAProcessData;
-static_assert(sizeof(FSAProcessData) == 0x4A3C, "FSAProcessData: wrong size");
-
-typedef struct __attribute__((packed)) {
-    uint32_t opened;
-    FSAProcessData *processData;
-    char unk0[0x10];
-    char unk1[0x90];
-    uint32_t unk2;
-    char work_dir[0x280];
-    uint32_t unk3;
-} FSAClientHandle;
-static_assert(sizeof(FSAClientHandle) == 0x330, "FSAClientHandle: wrong size");
-
 #define PATCHED_CLIENT_HANDLES_MAX_COUNT 0x40
+
+// Disable raw access to every device except ODD and USB
+#define DISABLED_CAPABILITIES                                                                                                       \
+    (FSA_CAPABILITY_SLCCMPT_RAW_OPEN | FSA_CAPABILITY_SLC_RAW_OPEN | FSA_CAPABILITY_MLC_RAW_OPEN | FSA_CAPABILITY_SDCARD_RAW_OPEN | \
+     FSA_CAPABILITY_HFIO_RAW_OPEN | FSA_CAPABILITY_RAMDISK_RAW_OPEN | FSA_CAPABILITY_OTHER_RAW_OPEN)
 
 FSAClientHandle *patchedClientHandles[PATCHED_CLIENT_HANDLES_MAX_COUNT];
 
@@ -64,7 +44,7 @@ int FSA_IOCTLV_HOOK(ResourceRequest *param_1, uint32_t u2, uint32_t u3) {
     int toBeRestored              = 0;
     for (int i = 0; i < PATCHED_CLIENT_HANDLES_MAX_COUNT; i++) {
         if (patchedClientHandles[i] == clientHandle) {
-            clientHandle->processData->capabilityMask = 0xffffffffffffffffL;
+            clientHandle->processData->capabilityMask = 0xffffffffffffffffL & ~DISABLED_CAPABILITIES;
             // printf("IOCTL: Force mask to 0xFFFFFFFFFFFFFFFF for client %08X\n", (uint32_t) clientHandle);
             toBeRestored = 1;
             break;
@@ -89,7 +69,7 @@ int FSA_IOCTL_HOOK(ResourceRequest *request, uint32_t u2, uint32_t u3, uint32_t 
     for (int i = 0; i < PATCHED_CLIENT_HANDLES_MAX_COUNT; i++) {
         if (patchedClientHandles[i] == clientHandle) {
             // printf("IOCTL: Force mask to 0xFFFFFFFFFFFFFFFF for client %08X\n", (uint32_t) clientHandle);
-            clientHandle->processData->capabilityMask = 0xffffffffffffffffL;
+            clientHandle->processData->capabilityMask = 0xffffffffffffffffL & ~DISABLED_CAPABILITIES;
             toBeRestored                              = 1;
             break;
         }
