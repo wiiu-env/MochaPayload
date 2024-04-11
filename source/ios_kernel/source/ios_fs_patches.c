@@ -49,11 +49,6 @@ void fs_run_patches(uint32_t ios_elf_start) {
     section_write_word(ios_elf_start, 0x107044f0, ARM_BL(0x107044f0, FSA_IOCTL_HOOK));
     section_write_word(ios_elf_start, 0x10704458, ARM_BL(0x10704458, FSA_IOS_Close_Hook));
 
-    // Keep patches for backwards compatibility (libiosuhax)
-    // patch FSA raw access
-    section_write_word(ios_elf_start, 0x1070FAE8, 0x05812070);
-    section_write_word(ios_elf_start, 0x1070FAEC, 0xEAFFFFF9);
-
     // fat32 driver patches
 
     // patch out fopen in stat
