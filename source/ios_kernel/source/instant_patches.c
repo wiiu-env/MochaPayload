@@ -62,11 +62,6 @@ void instant_patches_setup(void) {
 
     *(volatile u32 *) 0x0812CD2C = ARM_B(0x0812CD2C, kernel_syscall_0x81);
 
-    // Keep patches for backwards compatibility (libiosuhax)
-    // patch FSA raw access
-    *(volatile u32 *) fsa_phys(0x1070FAE8) = 0x05812070;
-    *(volatile u32 *) fsa_phys(0x1070FAEC) = 0xEAFFFFF9;
-
     // Add IOCTL 0x28 to indicate the calling client should have full fs permissions
     *(volatile u32 *) fsa_phys(0x10701248) = _FSA_ioctl0x28_hook;
 
