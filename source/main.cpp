@@ -8,8 +8,6 @@
 #include <cstring>
 #include <mocha/commands.h>
 #include <sysapp/title.h>
-#include <whb/log.h>
-#include <whb/log_udp.h>
 
 static void StartMCPThreadIfMochaAlreadyRunning() {
     // start /dev/iosuhax and wupserver if mocha is already running
@@ -26,9 +24,6 @@ static void StartMCPThreadIfMochaAlreadyRunning() {
 }
 
 int main(int argc, char **argv) {
-    WHBLogUdpInit();
-    WHBLogPrintf("Hello from mocha");
-
     if (argc >= 1) {
         if (strncmp(argv[0], "fs:/", 4) == 0) {
             strncpy((char *) 0xF417FEF0, argv[0], 0xFF);
@@ -55,7 +50,5 @@ int main(int argc, char **argv) {
         IOS_Ioctl(mcpFd, 100, &in, sizeof(in), &out, sizeof(out));
         IOS_Close(mcpFd);
     }
-
-    WHBLogPrintf("Bye from mocha");
     return 0;
 }
