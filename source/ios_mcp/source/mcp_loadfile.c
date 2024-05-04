@@ -179,8 +179,8 @@ MCP_LoadCustomFile(int target, char *path, uint32_t filesize, uint32_t fileoffse
         }
     }
 
-    // Unmount the sd card once the whole file has been read.
-    if (result >= 0 && result < 0x400000) {
+    // Unmount the sd card once the whole file has been read or there was an error
+    if ((result >= 0 && result < 0x400000) || result < 0) {
         if (target == LOAD_RPX_TARGET_SD_CARD) {
             int fsa_h = svcOpen("/dev/fsa", 0);
             FSA_Unmount(fsa_h, mountpath, 0x80000002);
