@@ -99,6 +99,7 @@ static RPXFileReplacements *gDynamicReplacements[5] = {};
 static const RPXFileReplacements gDefaultReplacements[] = {
         // Redirect men.rpx [ENVIRONMENT]/root.rpx until IPC_CUSTOM_MEN_RPX_HOOK_COMPLETED has been called. (e.g. to init PPC homebrew after iosu-reload)
         {REPLACEMENT_TYPE_UNTIL_MEM_HOOK_COMPLETED_BUT_BY_PATH, REPLACEMENT_LIFETIME_UNLIMITED, "men.rpx", "root.rpx", PATH_RELATIVE_TO_ENVIRONMENT, 0, 0, 0},
+        {REPLACEMENT_TYPE_UNTIL_MEM_HOOK_COMPLETED_BUT_BY_PATH, REPLACEMENT_LIFETIME_UNLIMITED, "WAGONU.rpx", "root.rpx", PATH_RELATIVE_TO_ENVIRONMENT, 0, 0, 0},
         // Redirect men.rpx to [ENVIRONMENT]/men.rpx
         {REPLACEMENT_TYPE_BY_PATH, REPLACEMENT_LIFETIME_UNLIMITED, "men.rpx", "men.rpx", PATH_RELATIVE_TO_ENVIRONMENT, 0, 0, 0},
         // Try to load the real H&S safe.rpx from backup
@@ -109,7 +110,7 @@ static const RPXFileReplacements gDefaultReplacements[] = {
 
 
 // should be at least the size of gDefaultReplacements and gDynamicReplacements
-#define TEMP_ARRAY_SIZE 10
+#define TEMP_ARRAY_SIZE 11
 
 bool addDynamicReplacement(RPXFileReplacements *pReplacements) {
     for (uint32_t i = 0; i < sizeof(gDynamicReplacements) / sizeof(gDynamicReplacements[0]); i++) {
@@ -534,9 +535,12 @@ int _MCP_ReadCOSXml_patch(uint32_t u1, uint32_t u2, MCPPPrepareTitleInfo *xmlDat
     // When the PPC Kernel reboots we replace the men.rpx to set up our PPC side again
     // for this the Wii U Menu temporarily gets replaced by our root.rpx and needs code gen access
     if (!gMemHookCompleted) {
-        if (xmlData->titleId == 0x0005001010040000 ||
-            xmlData->titleId == 0x0005001010040100 ||
-            xmlData->titleId == 0x0005001010040200) {
+        if (xmlData->titleId == 0x0005001010040000 ||  // Wii U Menu
+            xmlData->titleId == 0x0005001010040100 ||  // Wii U Menu
+            xmlData->titleId == 0x0005001010040200 ||  // Wii U Menu
+            xmlData->titleId == 0x0005001010062000L || // System Transfer
+            xmlData->titleId == 0x0005001010062100L || // System Transfer
+            xmlData->titleId == 0x0005001010062200L) { // System Transfer
 
             xmlData->codegen_size = 0x02000000;
             xmlData->codegen_core = 0x80000001;
