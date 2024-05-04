@@ -29,8 +29,14 @@
 #include <sys/unistd.h>
 #include <unistd.h>
 
+typedef enum {
+    MOCHA_LOAD_TARGET_DEVICE_NONE = 0,
+    MOCHA_LOAD_TARGET_DEVICE_SD   = 1,
+    MOCHA_LOAD_TARGET_DEVICE_MLC  = 2,
+} LoadTargetDevice;
+
 static int
-MCP_LoadCustomFile(int target, char *path, uint32_t filesize, uint32_t fileoffset, void *buffer_out,
+MCP_LoadCustomFile(LoadTargetDevice target, char *path, uint32_t filesize, uint32_t fileoffset, void *buffer_out,
                    uint32_t buffer_len,
                    uint32_t pos, bool isRPX);
 
@@ -68,7 +74,9 @@ typedef enum {
     PATH_RELATIVE_INVALID        = 0,
     PATH_RELATIVE_TO_ENVIRONMENT = 1,
     PATH_RELATIVE_TO_SD_ROOT     = 2,
+    PATH_RELATIVE_TO_MLC_ROOT    = 3,
 } PathRelativeTo;
+
 
 typedef struct RPXFileReplacements {
     ReplacementType type;
@@ -84,17 +92,24 @@ typedef struct RPXFileReplacements {
 static bool gMemHookCompleted = false;
 static bool sReplacedLastRPX  = false;
 
+
+// Dynamic replacements have priority over default replacements
+static RPXFileReplacements *gDynamicReplacements[5] = {};
+
 static const RPXFileReplacements gDefaultReplacements[] = {
         // Redirect men.rpx [ENVIRONMENT]/root.rpx until IPC_CUSTOM_MEN_RPX_HOOK_COMPLETED has been called. (e.g. to init PPC homebrew after iosu-reload)
         {REPLACEMENT_TYPE_UNTIL_MEM_HOOK_COMPLETED_BUT_BY_PATH, REPLACEMENT_LIFETIME_UNLIMITED, "men.rpx", "root.rpx", PATH_RELATIVE_TO_ENVIRONMENT, 0, 0, 0},
         // Redirect men.rpx to [ENVIRONMENT]/men.rpx
         {REPLACEMENT_TYPE_BY_PATH, REPLACEMENT_LIFETIME_UNLIMITED, "men.rpx", "men.rpx", PATH_RELATIVE_TO_ENVIRONMENT, 0, 0, 0},
+        // Try to load the real H&S safe.rpx from backup
+        {REPLACEMENT_TYPE_BY_PATH, REPLACEMENT_LIFETIME_UNLIMITED, "safe.rpx", "sys/title/00050010/1004e000/content/safe.rpx.bak", PATH_RELATIVE_TO_MLC_ROOT, 0, 0, 0},
+        {REPLACEMENT_TYPE_BY_PATH, REPLACEMENT_LIFETIME_UNLIMITED, "safe.rpx", "sys/title/00050010/1004e100/content/safe.rpx.bak", PATH_RELATIVE_TO_MLC_ROOT, 0, 0, 0},
+        {REPLACEMENT_TYPE_BY_PATH, REPLACEMENT_LIFETIME_UNLIMITED, "safe.rpx", "sys/title/00050010/1004e200/content/safe.rpx.bak", PATH_RELATIVE_TO_MLC_ROOT, 0, 0, 0},
 };
 
-static RPXFileReplacements *gDynamicReplacements[5] = {};
 
 // should be at least the size of gDefaultReplacements and gDynamicReplacements
-#define TEMP_ARRAY_SIZE 7
+#define TEMP_ARRAY_SIZE 10
 
 bool addDynamicReplacement(RPXFileReplacements *pReplacements) {
     for (uint32_t i = 0; i < sizeof(gDynamicReplacements) / sizeof(gDynamicReplacements[0]); i++) {
@@ -138,7 +153,7 @@ static inline int EndsWith(const char *str, const char *suffix) {
 
 // Set filesize to 0 if unknown.
 static int
-MCP_LoadCustomFile(int target, char *path, uint32_t filesize, uint32_t fileoffset, void *buffer_out,
+MCP_LoadCustomFile(LoadTargetDevice target, char *path, uint32_t filesize, uint32_t fileoffset, void *buffer_out,
                    uint32_t buffer_len,
                    uint32_t pos, bool isRPX) {
     if (path == NULL || (filesize > 0 && (pos > filesize))) {
@@ -151,7 +166,7 @@ MCP_LoadCustomFile(int target, char *path, uint32_t filesize, uint32_t fileoffse
 
     char mountpath[] = "/vol/storage_iosu_homebrew";
 
-    if (target == LOAD_RPX_TARGET_SD_CARD) {
+    if (target == MOCHA_LOAD_TARGET_DEVICE_SD) {
         int fsa_h = svcOpen("/dev/fsa", 0);
         FSA_Mount(fsa_h, "/dev/sdcard01", mountpath, 2, NULL, 0);
         svcClose(fsa_h);
@@ -181,7 +196,7 @@ MCP_LoadCustomFile(int target, char *path, uint32_t filesize, uint32_t fileoffse
 
     // Unmount the sd card once the whole file has been read or there was an error
     if ((result >= 0 && result < 0x400000) || result < 0) {
-        if (target == LOAD_RPX_TARGET_SD_CARD) {
+        if (target == MOCHA_LOAD_TARGET_DEVICE_SD) {
             int fsa_h = svcOpen("/dev/fsa", 0);
             FSA_Unmount(fsa_h, mountpath, 0x80000002);
             svcClose(fsa_h);
@@ -209,7 +224,7 @@ int DoSDRedirectionByPath(ipcmessage *msg, MCPLoadFileRequest *request) {
             curPtr++;
         }
         // DEBUG_FUNCTION_LINE("Trying to load %s from sd\n", &request->name[2]);
-        int result = MCP_LoadCustomFile(LOAD_RPX_TARGET_SD_CARD, &request->name[2], 0, 0, msg->ioctl.buffer_io,
+        int result = MCP_LoadCustomFile(MOCHA_LOAD_TARGET_DEVICE_SD, &request->name[2], 0, 0, msg->ioctl.buffer_io,
                                         msg->ioctl.length_io, request->pos, EndsWith(request->name, ".rpx"));
 
         if (result >= 0) {
@@ -230,8 +245,11 @@ bool isCurrentHomebrewWrapperReplacement(MCPLoadFileRequest *request) {
     return false;
 }
 
-const RPXFileReplacements *GetCurrentRPXReplacementEx(MCPLoadFileRequest *request, const RPXFileReplacements **list, uint32_t list_size) {
-    for (uint32_t i = 0; i < list_size; i++) {
+const RPXFileReplacements *GetCurrentRPXReplacementEx(MCPLoadFileRequest *request, const RPXFileReplacements **list, uint32_t list_size, int *offset) {
+    if (!offset || *offset >= list_size) {
+        return NULL;
+    }
+    for (uint32_t i = *offset; i < list_size; i++) {
         const RPXFileReplacements *cur = list[i];
         if (cur == NULL || cur->lifetime == REPLACEMENT_LIFETIME_INVALID) {
             continue;
@@ -283,6 +301,7 @@ const RPXFileReplacements *GetCurrentRPXReplacementEx(MCPLoadFileRequest *reques
                 break;
         }
         if (valid) {
+            *offset = i + 1;
             return cur;
         }
     }
@@ -291,16 +310,6 @@ const RPXFileReplacements *GetCurrentRPXReplacementEx(MCPLoadFileRequest *reques
 
 static uint32_t getReplacementDataInSingleArray(const RPXFileReplacements **tmpArray, uint32_t tmpArraySize) {
     uint32_t offsetInResult = 0;
-    for (uint32_t i = 0; i < sizeof(gDefaultReplacements) / sizeof(gDefaultReplacements[0]); i++) {
-        if (offsetInResult >= tmpArraySize) {
-            DEBUG_FUNCTION_LINE("ELEMENTS DO NOT FIT INTO ARRAY");
-            return offsetInResult;
-        }
-        if (gDefaultReplacements[i].lifetime != REPLACEMENT_LIFETIME_INVALID) {
-            tmpArray[offsetInResult] = &gDefaultReplacements[i];
-            offsetInResult++;
-        }
-    }
 
     for (uint32_t i = 0; i < sizeof(gDynamicReplacements) / sizeof(gDynamicReplacements[0]); i++) {
         if (offsetInResult >= tmpArraySize) {
@@ -312,30 +321,45 @@ static uint32_t getReplacementDataInSingleArray(const RPXFileReplacements **tmpA
             offsetInResult++;
         }
     }
+
+    for (uint32_t i = 0; i < sizeof(gDefaultReplacements) / sizeof(gDefaultReplacements[0]); i++) {
+        if (offsetInResult >= tmpArraySize) {
+            DEBUG_FUNCTION_LINE("ELEMENTS DO NOT FIT INTO ARRAY");
+            return offsetInResult;
+        }
+        if (gDefaultReplacements[i].lifetime != REPLACEMENT_LIFETIME_INVALID) {
+            tmpArray[offsetInResult] = &gDefaultReplacements[i];
+            offsetInResult++;
+        }
+    }
     return offsetInResult;
 }
 
-const RPXFileReplacements *GetCurrentRPXReplacement(MCPLoadFileRequest *request) {
+const RPXFileReplacements *GetCurrentRPXReplacement(MCPLoadFileRequest *request, int *offset) {
     const RPXFileReplacements *tmpArray[TEMP_ARRAY_SIZE] = {};
     uint32_t elementsInArray                             = getReplacementDataInSingleArray(tmpArray, TEMP_ARRAY_SIZE);
     if (elementsInArray == 0) {
         return NULL;
     }
 
-    return GetCurrentRPXReplacementEx(request, tmpArray, elementsInArray);
+    return GetCurrentRPXReplacementEx(request, tmpArray, elementsInArray, offset);
 }
 
 int DoReplacementByStruct(ipcmessage *msg, MCPLoadFileRequest *request, const RPXFileReplacements *curReplacement) {
     char _rpxpath[256] = {};
 
-    int target = -1;
+    LoadTargetDevice target = MOCHA_LOAD_TARGET_DEVICE_NONE;
     if (curReplacement->relativeTo == PATH_RELATIVE_TO_ENVIRONMENT) {
         char *environmentPath = &((char *) 0x0511FF00)[19];
         snprintf(_rpxpath, sizeof(_rpxpath) - 1, "%s/%s", environmentPath, curReplacement->replacementPath); // Copy in environment path
-        target = LOAD_RPX_TARGET_SD_CARD;
+        target = MOCHA_LOAD_TARGET_DEVICE_SD;
     } else if (curReplacement->relativeTo == PATH_RELATIVE_TO_SD_ROOT) {
         strncpy(_rpxpath, curReplacement->replacementPath, sizeof(_rpxpath) - 1);
-        target = LOAD_RPX_TARGET_SD_CARD;
+        target = MOCHA_LOAD_TARGET_DEVICE_SD;
+    } else if (curReplacement->relativeTo == PATH_RELATIVE_TO_MLC_ROOT) {
+        strncpy(_rpxpath, curReplacement->replacementPath, sizeof(_rpxpath) - 1);
+        snprintf(_rpxpath, sizeof(_rpxpath) - 1, "/vol/storage_mlc01/%s", curReplacement->replacementPath); // Copy in environment path
+        target = MOCHA_LOAD_TARGET_DEVICE_MLC;
     } else {
         DEBUG_FUNCTION_LINE("Unknown relativeTo: %d\n", curReplacement->relativeTo);
         return -1;
@@ -359,17 +383,25 @@ int MCPLoadFileReplacement(ipcmessage *msg, MCPLoadFileRequest *request) {
         return res;
     }
 
-    const RPXFileReplacements *curReplacement = GetCurrentRPXReplacement(request);
-    if (curReplacement == NULL) {
-        // DEBUG_FUNCTION_LINE("Couldn't find replacement for %s!\n", request->name);
-        return -1;
-    }
+    // Try any fitting rpx replacement
+    int offset                                = 0;
+    const RPXFileReplacements *curReplacement = NULL;
+    do {
+        // the offset is used as input AND output.
+        // The start index for looking for a replacement will be read from "offset"
+        // if the function returns != NULL, offset will be set to the next possible index/offset
+        curReplacement = GetCurrentRPXReplacement(request, &offset);
+        if (curReplacement == NULL) {
+            // DEBUG_FUNCTION_LINE("Couldn't find replacement for %s!\n", request->name);
+            return -1;
+        }
 
-    if ((res = DoReplacementByStruct(msg, request, curReplacement)) >= 0) {
-        return res;
-    }
+        if ((res = DoReplacementByStruct(msg, request, curReplacement)) >= 0) {
+            return res;
+        }
+    } while (curReplacement);
 
-    return res;
+    return -1;
 }
 
 void IncreaseApplicationStartCounter() {
