@@ -177,11 +177,11 @@ MCP_LoadCustomFile(LoadTargetDevice target, char *path, uint32_t filesize, uint3
         strncat(filepath, path, (sizeof(filepath) - 1) - strlen(filepath));
     }
 
-    DEBUG_FUNCTION_LINE("Load custom path \"%s\"\n", filepath);
+    DEBUG_FUNCTION_LINE("Trying to load .rpx from custom path \"%s\"\n", filepath);
 
     int bytesRead = 0;
     int result    = MCP_DoLoadFile(filepath, NULL, buffer_out, buffer_len, pos + fileoffset, &bytesRead, 0);
-    // DEBUG_FUNCTION_LINE("MCP_DoLoadFile returned %d, bytesRead = %d pos %u\n", result, bytesRead, pos + fileoffset);
+    DEBUG_FUNCTION_LINE("MCP_DoLoadFile returned %d, bytesRead = %d pos %u\n", result, bytesRead, pos + fileoffset);
 
     if (result >= 0) {
         if (bytesRead <= 0) {
@@ -366,7 +366,7 @@ int DoReplacementByStruct(ipcmessage *msg, MCPLoadFileRequest *request, const RP
         return -1;
     }
 
-    DEBUG_FUNCTION_LINE("Load custom file %s\n", _rpxpath);
+    // DEBUG_FUNCTION_LINE("Load custom file %s\n", _rpxpath);
     return MCP_LoadCustomFile(target,
                               _rpxpath,
                               curReplacement->fileSize,
