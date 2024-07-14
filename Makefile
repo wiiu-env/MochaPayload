@@ -96,16 +96,20 @@ $(BUILD): $(CURDIR)/source/ios_kernel/ios_kernel.bin.h
 	@[ -d $@ ] || mkdir -p $@
 	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_fs -f $(CURDIR)/source/ios_fs/Makefile
 	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_mcp -f $(CURDIR)/source/ios_mcp/Makefile
-	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_usb -f $(CURDIR)/source/ios_usb/Makefile    
+	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_net -f $(CURDIR)/source/ios_mcp/Makefile
+	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_usb -f $(CURDIR)/source/ios_usb/Makefile
 	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_kernel -f $(CURDIR)/source/ios_kernel/Makefile
 	@$(MAKE) -j1 --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
-$(CURDIR)/source/ios_kernel/ios_kernel.bin.h: $(CURDIR)/source/ios_usb/ios_usb.bin.h  $(CURDIR)/source/ios_mcp/ios_mcp.bin.h $(CURDIR)/source/ios_fs/ios_fs.bin.h
+$(CURDIR)/source/ios_kernel/ios_kernel.bin.h: $(CURDIR)/source/ios_usb/ios_usb.bin.h $(CURDIR)/source/ios_net/ios_net.bin.h $(CURDIR)/source/ios_mcp/ios_mcp.bin.h $(CURDIR)/source/ios_fs/ios_fs.bin.h
 	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_kernel -f $(CURDIR)/source/ios_kernel/Makefile
 
 $(CURDIR)/source/ios_usb/ios_usb.bin.h: 
 	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_usb -f $(CURDIR)/source/ios_usb/Makefile
-    
+
+$(CURDIR)/source/ios_net/ios_net.bin.h: 
+	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_net -f $(CURDIR)/source/ios_net/Makefile
+
 $(CURDIR)/source/ios_mcp/ios_mcp.bin.h: 
 	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_mcp -f $(CURDIR)/source/ios_mcp/Makefile
 
@@ -117,6 +121,7 @@ clean:
 	@rm -fr $(BUILD) $(TARGET).rpx $(TARGET).elf
 	@$(MAKE) --no-print-directory -C $(CURDIR)/source/ios_kernel -f  $(CURDIR)/source/ios_kernel/Makefile clean
 	@$(MAKE) --no-print-directory -C $(CURDIR)/source/ios_usb -f  $(CURDIR)/source/ios_usb/Makefile clean
+	@$(MAKE) --no-print-directory -C $(CURDIR)/source/ios_net -f  $(CURDIR)/source/ios_net/Makefile clean
 	@$(MAKE) --no-print-directory -C $(CURDIR)/source/ios_mcp -f  $(CURDIR)/source/ios_mcp/Makefile clean	
 	@$(MAKE) --no-print-directory -C $(CURDIR)/source/ios_fs -f  $(CURDIR)/source/ios_fs/Makefile clean	
 

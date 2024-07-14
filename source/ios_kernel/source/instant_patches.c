@@ -23,9 +23,9 @@
  ***************************************************************************/
 #include "../../ios_fs/ios_fs_syms.h"
 #include "../../ios_mcp/ios_mcp_syms.h"
+#include "../../ios_net/ios_net_syms.h"
 #include "elf_patcher.h"
 #include "ios_fs_patches.h"
-#include "ios_mcp_patches.h"
 #include "kernel_patches.h"
 #include "types.h"
 #include "utils.h"
@@ -47,6 +47,7 @@ typedef struct {
 #define mcp_text_phys(addr)        ((u32) (addr) -0x05000000 + 0x081C0000)
 #define mcp_rodata_phys(addr)      ((u32) (addr) -0x05060000 + 0x08220000)
 #define mcp_data_phys(addr)        ((u32) (addr) -0x05074000 + 0x08234000)
+#define net_phys(addr)             ((u32) (addr))
 #define fsa_phys(addr)             ((u32) (addr))
 #define kernel_phys(addr)          ((u32) (addr))
 #define acp_text_phys(addr)        ((u32) (addr) -0xE0000000 + 0x12900000)
@@ -164,6 +165,53 @@ void instant_patches_setup(void) {
     // patch default title id to system menu
     *(volatile u32 *) mcp_data_phys(0x050B817C) = *(volatile u32 *) 0x0017FFF0;
     *(volatile u32 *) mcp_data_phys(0x050B8180) = *(volatile u32 *) 0x0017FFF4;
+
+    // Patch DLP region check by replacing result code with success
+    *(volatile u32 *) net_phys(0x1239DA7C) = 0;
+
+    // Patch DLP to ignore error for missing title archive
+    *(volatile u32 *) net_phys(0x1239E108) = 0xEA000000; // mov r0, r0
+    *(volatile u32 *) net_phys(0x1239E10C) = 0xEA000000; // mov r0, r0
+    *(volatile u32 *) net_phys(0x1239E110) = 0xEA000000; // mov r0, r0
+
+    // Patch DLP path from /vol/content/dlp/app to sd:/dlp/app
+    *(volatile u32 *) net_phys(0x12455368)      = 0x2F766F6C; // /vol
+    *(volatile u32 *) net_phys(0x12455368 + 4)  = 0x2F646C70; // /dlp
+    *(volatile u32 *) net_phys(0x12455368 + 8)  = 0x5F5F7364; // __sd
+    *(volatile u32 *) net_phys(0x12455368 + 12) = 0x2F646C70; // /dlp
+    *(volatile u32 *) net_phys(0x12455368 + 16) = 0x2F617070; // /app
+    *(volatile u32 *) net_phys(0x12455368 + 20) = 0x00000000; //
+
+    // Patch DLP path from /vol/content/dlp/app to sd:/dlp/app
+    *(volatile u32 *) net_phys(0x12455490)      = 0x2F766F6C; // /vol
+    *(volatile u32 *) net_phys(0x12455490 + 4)  = 0x2F646C70; // /dlp
+    *(volatile u32 *) net_phys(0x12455490 + 8)  = 0x5F5F7364; // __sd
+    *(volatile u32 *) net_phys(0x12455490 + 12) = 0x2F646C70; // /dlp
+    *(volatile u32 *) net_phys(0x12455490 + 16) = 0x2F617070; // /app
+    *(volatile u32 *) net_phys(0x12455490 + 20) = 0x00000000; //
+
+    // DLP: (un)mount sd card for .cia reading.
+    *(volatile u32 *) net_phys(0x1237f33c) = ARM_BL(0x1237f33c, DLP_FSAInit_patch);
+    *(volatile u32 *) net_phys(0x123a4448) = ARM_BL(0x123a4448, DLP_FSAInit_patch);
+    *(volatile u32 *) net_phys(0x1239de98) = ARM_BL(0x1239de98, DLP_FSAInit_patch);
+
+    *(volatile u32 *) net_phys(0x1237f310) = ARM_BL(0x1237f310, DLP_FSADeinit_patch);
+    *(volatile u32 *) net_phys(0x1239dfa0) = ARM_BL(0x1239dfa0, DLP_FSADeinit_patch);
+    *(volatile u32 *) net_phys(0x1239dfc0) = ARM_BL(0x1239dfc0, DLP_FSADeinit_patch);
+    *(volatile u32 *) net_phys(0x1239dfd8) = ARM_BL(0x1239dfd8, DLP_FSADeinit_patch);
+    *(volatile u32 *) net_phys(0x1239dfec) = ARM_BL(0x1239dfec, DLP_FSADeinit_patch);
+    *(volatile u32 *) net_phys(0x1239e020) = ARM_BL(0x1239e020, DLP_FSADeinit_patch);
+    *(volatile u32 *) net_phys(0x1239e094) = ARM_BL(0x1239e094, DLP_FSADeinit_patch);
+    *(volatile u32 *) net_phys(0x123a457c) = ARM_BL(0x123a457c, DLP_FSADeinit_patch);
+
+    // DLP debug:
+    /*
+    *(volatile u32 *) net_phys(0x123a449c) = ARM_BL(0x123a449c, DLP_FSA_OpenFile);
+    *(volatile u32 *) net_phys(0x1239ce08) = ARM_BL(0x1239ce08, DLP_FSA_OpenFile);
+    *(volatile u32 *) net_phys(0x1239cf68) = ARM_BL(0x1239cf68, DLP_FSA_OpenFile);
+    *(volatile u32 *) net_phys(0x1239defc) = ARM_BL(0x1239defc, DLP_FSA_OpenFile);
+    *(volatile u32 *) net_phys(0x1239debc) = ARM_BL(0x1239debc, DLP_GetChildTitleId);
+    */
 
     // Place the environment path at the end of our .text section.
     for (int i = 0; i < ENVIRONMENT_PATH_LENGTH; i += 4) {

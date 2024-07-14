@@ -8,3 +8,5 @@ cmake-build-debug/
 .idea/
 CMakeLists.txt
 cmake-build-debug-mocha-builder/
+source/ios_net/ios_net.bin
+source/ios_net/ios_net.bin.h

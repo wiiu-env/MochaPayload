@@ -23,6 +23,7 @@
  ***************************************************************************/
 #include "instant_patches.h"
 #include "ios_mcp_patches.h"
+#include "ios_net_patches.h"
 #include "types.h"
 #include "utils.h"
 
@@ -89,6 +90,9 @@ int _main() {
 
     payload_info_t *payloads = (payload_info_t *) 0x00148000;
     kernel_memcpy((void *) USB_PHYS_CODE_BASE, payloads->data, payloads->size);
+
+    payloads = (payload_info_t *) 0x00149000;
+    kernel_memcpy((void *) net_get_phys_code_base(), payloads->data, payloads->size);
 
     payloads = (payload_info_t *) 0x00160000;
     kernel_memcpy((void *) mcp_get_phys_code_base(), payloads->data, payloads->size);
