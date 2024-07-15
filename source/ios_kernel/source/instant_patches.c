@@ -50,7 +50,6 @@ typedef struct {
 #define net_phys(addr)             ((u32) (addr))
 #define fsa_phys(addr)             ((u32) (addr))
 #define kernel_phys(addr)          ((u32) (addr))
-#define net_phys(addr)             ((u32) (addr))
 #define acp_text_phys(addr)        ((u32) (addr) -0xE0000000 + 0x12900000)
 #define nimboss_text_phys(addr)    ((u32) (addr) -0xe2000000 + 0x12EC0000)
 #define nimboss_rodata_phys(addr)  ((u32) (addr) -0xe2280000 + 0x13140000)
@@ -221,11 +220,6 @@ void instant_patches_setup(void) {
 
     // force check USB storage on load
     *(volatile u32 *) acp_text_phys(0xE012202C) = 0x00000001; // find USB flag
-
-    // Patch DLP to ignore error for missing title archive
-    *(volatile u32 *) net_phys(0x1239E108) = 0xEA000000; // mov r0, r0
-    *(volatile u32 *) net_phys(0x1239E10C) = 0xEA000000; // mov r0, r0
-    *(volatile u32 *) net_phys(0x1239E110) = 0xEA000000; // mov r0, r0
 
     // Patch FS to syslog everything
     *(volatile u32 *) fsa_phys(0x107F5720) = ARM_B(0x107F5720, 0x107F0C84);
