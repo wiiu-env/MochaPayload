@@ -26,6 +26,7 @@
 #include "elf_patcher.h"
 #include "ios_fs_patches.h"
 #include "ios_mcp_patches.h"
+#include "ios_net_patches.h"
 #include "thread.h"
 #include "types.h"
 #include "utils.h"
@@ -110,6 +111,7 @@ void kernel_launch_ios(u32 launch_address, u32 L, u32 C, u32 H) {
         mcp_run_patches(ios_elf_start);
         kernel_run_patches(ios_elf_start);
         fs_run_patches(ios_elf_start);
+        net_run_patches(ios_elf_start);
 
         restore_mmu(control_register);
         enable_interrupts(level);

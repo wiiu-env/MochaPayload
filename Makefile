@@ -96,7 +96,7 @@ $(BUILD): $(CURDIR)/source/ios_kernel/ios_kernel.bin.h
 	@[ -d $@ ] || mkdir -p $@
 	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_fs -f $(CURDIR)/source/ios_fs/Makefile
 	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_mcp -f $(CURDIR)/source/ios_mcp/Makefile
-	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_net -f $(CURDIR)/source/ios_mcp/Makefile
+	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_net -f $(CURDIR)/source/ios_net/Makefile
 	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_usb -f $(CURDIR)/source/ios_usb/Makefile
 	@$(MAKE) -j1 --no-print-directory -C $(CURDIR)/source/ios_kernel -f $(CURDIR)/source/ios_kernel/Makefile
 	@$(MAKE) -j1 --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
