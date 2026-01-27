@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstring>
 #include <mocha/commands.h>
+#include <stroopwafel/stroopwafel.h>
 #include <sysapp/title.h>
 
 static void StartMCPThreadIfMochaAlreadyRunning() {
@@ -36,6 +37,8 @@ int main(int argc, char **argv) {
 
     StartMCPThreadIfMochaAlreadyRunning();
 
+    Stroopwafel_InitLibrary();
+
     ExecuteIOSExploit();
 
     // When the kernel exploit is set up successfully, we signal the ios to move on.
@@ -50,5 +53,8 @@ int main(int argc, char **argv) {
         IOS_Ioctl(mcpFd, 100, &in, sizeof(in), &out, sizeof(out));
         IOS_Close(mcpFd);
     }
+
+    Stroopwafel_DeInitLibrary();
+
     return 0;
 }
