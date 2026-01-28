@@ -24,6 +24,8 @@
 #ifndef _INSTANT_PATCHES_SETUP_H_
 #define _INSTANT_PATCHES_SETUP_H_
 
-void instant_patches_setup(void);
+#include "types.h"
+
+void instant_patches_setup(u32 stroopwafel);
 
 #endif

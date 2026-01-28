@@ -30,6 +30,8 @@
 #define USB_PHYS_CODE_BASE 0x101312D0
 #define FS_PHYS_CODE_BASE  0x107F8200
 
+static u32 stroopwafel = 1;
+
 typedef struct {
     u32 size;
     u8 data[0];
@@ -79,29 +81,31 @@ int _main() {
     *(volatile uint32_t *) 0x0812c138 = 0xe3a00000; // mov r0, #0
     *(volatile uint32_t *) 0x0812c13c = 0xe12fff1e; // bx lr
 
-    void *pset_fault_behavior = (void *) 0x081298BC;
-    kernel_memcpy(pset_fault_behavior, (void *) repairData_set_fault_behavior, sizeof(repairData_set_fault_behavior));
+    if(!stroopwafel){
+        void *pset_fault_behavior = (void *) 0x081298BC;
+        kernel_memcpy(pset_fault_behavior, (void *) repairData_set_fault_behavior, sizeof(repairData_set_fault_behavior));
 
-    void *pset_panic_behavior = (void *) 0x081296E4;
-    kernel_memcpy(pset_panic_behavior, (void *) repairData_set_panic_behavior, sizeof(repairData_set_panic_behavior));
+        void *pset_panic_behavior = (void *) 0x081296E4;
+        kernel_memcpy(pset_panic_behavior, (void *) repairData_set_panic_behavior, sizeof(repairData_set_panic_behavior));
 
-    void *pusb_root_thread = (void *) 0x10100174;
-    kernel_memcpy(pusb_root_thread, (void *) repairData_usb_root_thread, sizeof(repairData_usb_root_thread));
+        void *pusb_root_thread = (void *) 0x10100174;
+        kernel_memcpy(pusb_root_thread, (void *) repairData_usb_root_thread, sizeof(repairData_usb_root_thread));
 
-    payload_info_t *payloads = (payload_info_t *) 0x00148000;
-    kernel_memcpy((void *) USB_PHYS_CODE_BASE, payloads->data, payloads->size);
+        payload_info_t *payloads = (payload_info_t *) 0x00148000;
+        kernel_memcpy((void *) USB_PHYS_CODE_BASE, payloads->data, payloads->size);
 
-    payloads = (payload_info_t *) 0x00149000;
-    kernel_memcpy((void *) net_get_phys_code_base(), payloads->data, payloads->size);
+        payloads = (payload_info_t *) 0x00149000;
+        kernel_memcpy((void *) net_get_phys_code_base(), payloads->data, payloads->size);
 
-    payloads = (payload_info_t *) 0x00160000;
-    kernel_memcpy((void *) mcp_get_phys_code_base(), payloads->data, payloads->size);
+        payloads = (payload_info_t *) 0x00160000;
+        kernel_memcpy((void *) mcp_get_phys_code_base(), payloads->data, payloads->size);
 
-    payloads = (payload_info_t *) 0x00170000;
-    kernel_memcpy((void *) FS_PHYS_CODE_BASE, payloads->data, payloads->size);
+        payloads = (payload_info_t *) 0x00170000;
+        kernel_memcpy((void *) FS_PHYS_CODE_BASE, payloads->data, payloads->size);
+    }
 
     // run all instant patches as necessary
-    instant_patches_setup();
+    instant_patches_setup(stroopwafel);
 
     *(volatile u32 *) (0x1555500) = 0;
 

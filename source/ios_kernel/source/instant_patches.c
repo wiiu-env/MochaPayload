@@ -25,6 +25,7 @@
 #include "../../ios_mcp/ios_mcp_syms.h"
 #include "../../ios_net/ios_net_syms.h"
 #include "elf_patcher.h"
+#include "instant_patches_common.h"
 #include "ios_fs_patches.h"
 #include "kernel_patches.h"
 #include "types.h"
@@ -38,10 +39,6 @@ typedef struct {
     u32 type;
     u32 cached;
 } ios_map_shared_info_t;
-#define MCP_CUSTOM_TEXT_LENGTH     0xA000
-#define MCP_CUSTOM_TEXT_START      0x05116000
-#define MCP_CUSTOM_BSS_START       0x050BD000
-#define MCP_CUSTOM_BSS_LENGTH      0x3000
 #define ENVIRONMENT_PATH_LENGTH    0x100
 
 #define mcp_text_phys(addr)        ((u32) (addr) -0x05000000 + 0x081C0000)
@@ -54,10 +51,8 @@ typedef struct {
 #define nimboss_text_phys(addr)    ((u32) (addr) -0xe2000000 + 0x12EC0000)
 #define nimboss_rodata_phys(addr)  ((u32) (addr) -0xe2280000 + 0x13140000)
 #define bsp_data_phys(addr)        ((u32) (addr) -0xe6042000 + 0x13d02000)
-#define mcp_custom_text_phys(addr) ((u32) (addr) -0x05100000 + 0x13D80000)
-#define mcp_custom_bss_phys(addr)  ((u32) (addr) -0x05000000 + 0x081C0000)
 
-void instant_patches_setup(void) {
+void instant_patches_setup(u32 stroopwafel) {
     // apply IOS ELF launch hook
     *(volatile u32 *) 0x0812A120 = ARM_BL(0x0812A120, kernel_launch_ios);
 
@@ -227,20 +222,22 @@ void instant_patches_setup(void) {
     // Patch MCP to syslog everything
     *(volatile u32 *) mcp_text_phys(0x05055438) = ARM_B(0x05055438, 0x0503dcf8);
 
-    ios_map_shared_info_t map_info;
-    map_info.paddr  = mcp_custom_bss_phys(MCP_CUSTOM_BSS_START);
-    map_info.vaddr  = MCP_CUSTOM_BSS_START;
-    map_info.size   = MCP_CUSTOM_BSS_LENGTH;
-    map_info.domain = 1; // MCP
-    map_info.type   = 3; // 0 = undefined, 1 = kernel only, 2 = read only, 3 = read/write
-    map_info.cached = 0xFFFFFFFF;
-    _iosMapSharedUserExecution(&map_info); // actually a bss section but oh well it will have read/write
+    if(!stroopwafel) {
+        ios_map_shared_info_t map_info;
+        map_info.paddr  = mcp_custom_bss_phys(MCP_CUSTOM_BSS_START);
+        map_info.vaddr  = MCP_CUSTOM_BSS_START;
+        map_info.size   = MCP_CUSTOM_BSS_LENGTH;
+        map_info.domain = 1; // MCP
+        map_info.type   = 3; // 0 = undefined, 1 = kernel only, 2 = read only, 3 = read/write
+        map_info.cached = 0xFFFFFFFF;
+        _iosMapSharedUserExecution(&map_info); // actually a bss section but oh well it will have read/write
 
-    map_info.paddr  = mcp_custom_text_phys(MCP_CUSTOM_TEXT_START);
-    map_info.vaddr  = MCP_CUSTOM_TEXT_START;
-    map_info.size   = MCP_CUSTOM_TEXT_LENGTH;
-    map_info.domain = 1; // MCP
-    map_info.type   = 3; // 0 = undefined, 1 = kernel only, 2 = read only, 3 = read write
-    map_info.cached = 0xFFFFFFFF;
-    _iosMapSharedUserExecution(&map_info);
+        map_info.paddr  = mcp_custom_text_phys(MCP_CUSTOM_TEXT_START);
+        map_info.vaddr  = MCP_CUSTOM_TEXT_START;
+        map_info.size   = MCP_CUSTOM_TEXT_LENGTH;
+        map_info.domain = 1; // MCP
+        map_info.type   = 3; // 0 = undefined, 1 = kernel only, 2 = read only, 3 = read write
+        map_info.cached = 0xFFFFFFFF;
+        _iosMapSharedUserExecution(&map_info);
+    }
 }
