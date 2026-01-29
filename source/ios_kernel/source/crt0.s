@@ -6,4 +6,5 @@
 .type _main, %function
 
 _start:
+	mov r0, #0
 	b _main

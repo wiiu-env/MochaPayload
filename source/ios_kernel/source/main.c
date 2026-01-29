@@ -30,8 +30,6 @@
 #define USB_PHYS_CODE_BASE 0x101312D0
 #define FS_PHYS_CODE_BASE  0x107F8200
 
-static u32 stroopwafel = 1;
-
 typedef struct {
     u32 size;
     u8 data[0];
@@ -63,7 +61,7 @@ static const char repairData_usb_root_thread[] = {
 };
 // clang-format on
 
-int _main() {
+int _main(u32 stroopwafel) {
     void (*invalidate_icache)()                           = (void (*)()) 0x0812DCF0;
     void (*invalidate_dcache)(unsigned int, unsigned int) = (void (*)()) 0x08120164;
     void (*flush_dcache)(unsigned int, unsigned int)      = (void (*)()) 0x08120160;

@@ -37,7 +37,6 @@ int main(int argc, char **argv) {
 
     StartMCPThreadIfMochaAlreadyRunning();
 
-    Stroopwafel_InitLibrary();
 
     ExecuteIOSExploit();
 
