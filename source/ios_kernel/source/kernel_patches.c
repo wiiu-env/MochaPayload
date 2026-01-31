@@ -69,7 +69,7 @@ int kernel_syscall_0x81(u32 command, u32 arg1, u32 arg2, u32 arg3) {
             break;
         }
         case KERNEL_WRITE32: {
-            kernel_memcpy((void*)arg1, &arg2, sizeof(uint32_t));
+            kernel_memcpy((void *) arg1, &arg2, sizeof(uint32_t));
             flush_dcache(arg1, 4);
             invalidate_icache();
             break;
