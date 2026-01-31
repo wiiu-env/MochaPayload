@@ -1,11 +1,6 @@
-FROM ghcr.io/wiiu-env/devkitppc:20240505
+FROM ghcr.io/wiiu-env/devkitppc:20260126
 
 COPY --from=ghcr.io/wiiu-env/libmocha:20231127 /artifacts $DEVKITPRO
-
-RUN git clone https://github.com/StroopwafelCFW/libstroopwafel.git && \
-    cd libstroopwafel && \
-    make install && \
-    cd .. && \
-    rm -rf libstroopwafel
+COPY --from=ghcr.io/stroopwafelcfw/libstroopwafel:20260131 /artifacts $DEVKITPRO
 
 WORKDIR project
