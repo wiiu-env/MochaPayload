@@ -67,8 +67,7 @@ void section_write(u32 ios_elf_start, u32 address, const void *data, u32 size) {
 
         Elf32_Ehdr *ehdr = (Elf32_Ehdr *) ios_elf_start;
         Elf32_Phdr *tmpPhdr;
-        u32 i;
-        for (i = (ehdr->e_phnum - 1); i >= 0; i--) {
+        for (s32 i = (ehdr->e_phnum - 1); i >= 0; i--) {
             tmpPhdr = (Elf32_Phdr *) (ios_elf_start + ehdr->e_phoff + ehdr->e_phentsize * i);
 
             if (phdr->p_offset < tmpPhdr->p_offset) {

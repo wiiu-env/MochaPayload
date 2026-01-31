@@ -88,8 +88,7 @@ void reverse_memcpy(void *dst, const void *src, unsigned int size) {
 void *memset(void *dst, int val, size_t size) {
     char *_dst = dst;
 
-    int i;
-    for (i = 0; i < size; i++)
+    for (size_t i = 0; i < size; i++)
         _dst[i] = val;
 
     return dst;

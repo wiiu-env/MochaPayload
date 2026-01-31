@@ -37,6 +37,6 @@ uint32_t DLP_FSA_OpenFile(int fd, char *path, char *mode, uint32_t *outhandle) {
 uint32_t DLP_GetChildTitleId(uint32_t *titleId, uint32_t uniqueId, int fsaHandle, const char *path, uint8_t childIndex) {
     int (*const real_DLP_GetChildTitleId)(uint32_t * titleId, uint32_t uniqueId, int fsaHandle, const char *, uint8_t childIndex) = (void *) 0x1239bd38;
     int result                                                                                                                    = real_DLP_GetChildTitleId(titleId, uniqueId, fsaHandle, path, childIndex);
-    printf("DLP_GetChildTitleId(%08X%08X unique %08X handle %08X path \"%s\" childindex %02X) returned %d \n", titleId[0], titleId[1], uniqueId, fsaHandle, path, childIndex, result);
+    printf("DLP_GetChildTitleId(%08lX%08lX unique %08lX handle %08X path \"%s\" childindex %02X) returned %d \n", titleId[0], titleId[1], uniqueId, fsaHandle, path, childIndex, result);
     return result;
 }

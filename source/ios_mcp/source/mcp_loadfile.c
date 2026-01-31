@@ -23,6 +23,7 @@
 #include "ipc_types.h"
 #include "logger.h"
 #include "svc.h"
+#include <inttypes.h>
 #include <mocha/commands.h>
 #include <stdio.h>
 #include <string.h>
@@ -181,7 +182,7 @@ MCP_LoadCustomFile(LoadTargetDevice target, char *path, uint32_t filesize, uint3
 
     int bytesRead = 0;
     int result    = MCP_DoLoadFile(filepath, NULL, buffer_out, buffer_len, pos + fileoffset, &bytesRead, 0);
-    DEBUG_FUNCTION_LINE("MCP_DoLoadFile returned %d, bytesRead = %d pos %u\n", result, bytesRead, pos + fileoffset);
+    DEBUG_FUNCTION_LINE("MCP_DoLoadFile returned %d, bytesRead = %d pos %lu\n", result, bytesRead, pos + fileoffset);
 
     if (result >= 0) {
         if (bytesRead <= 0) {
@@ -246,7 +247,7 @@ bool isCurrentHomebrewWrapperReplacement(MCPLoadFileRequest *request) {
     return false;
 }
 
-const RPXFileReplacements *GetCurrentRPXReplacementEx(MCPLoadFileRequest *request, const RPXFileReplacements **list, uint32_t list_size, int *offset) {
+const RPXFileReplacements *GetCurrentRPXReplacementEx(MCPLoadFileRequest *request, const RPXFileReplacements **list, uint32_t list_size, uint32_t *offset) {
     if (!offset || *offset >= list_size) {
         return NULL;
     }
@@ -336,7 +337,7 @@ static uint32_t getReplacementDataInSingleArray(const RPXFileReplacements **tmpA
     return offsetInResult;
 }
 
-const RPXFileReplacements *GetCurrentRPXReplacement(MCPLoadFileRequest *request, int *offset) {
+const RPXFileReplacements *GetCurrentRPXReplacement(MCPLoadFileRequest *request, uint32_t *offset) {
     const RPXFileReplacements *tmpArray[TEMP_ARRAY_SIZE] = {};
     uint32_t elementsInArray                             = getReplacementDataInSingleArray(tmpArray, TEMP_ARRAY_SIZE);
     if (elementsInArray == 0) {
@@ -385,7 +386,7 @@ int MCPLoadFileReplacement(ipcmessage *msg, MCPLoadFileRequest *request) {
     }
 
     // Try any fitting rpx replacement
-    int offset                                = 0;
+    uint32_t offset                           = 0;
     const RPXFileReplacements *curReplacement = NULL;
     do {
         // the offset is used as input AND output.
@@ -606,7 +607,7 @@ int _MCP_ioctl100_patch(ipcmessage *msg) {
                         return 22;
                     }
 
-                    DEBUG_FUNCTION_LINE("Will load %s for next title from target: %d (offset %u, filesize %u)\n",
+                    DEBUG_FUNCTION_LINE("Will load %s for next title from target: %d (offset %lu, filesize %lu)\n",
                                         newReplacement->replacementPath, target, fileoffset, filesize);
                     return 0;
                 } else {

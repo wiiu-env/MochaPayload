@@ -22,8 +22,20 @@
  * distribution.
  ***************************************************************************/
 #include "../../ios_fs/ios_fs_syms.h"
+#undef _text_start
+#undef _text_end
+#undef _bss_start
+#undef _bss_end
 #include "../../ios_mcp/ios_mcp_syms.h"
+#undef _text_start
+#undef _text_end
+#undef _bss_start
+#undef _bss_end
 #include "../../ios_net/ios_net_syms.h"
+#undef _text_start
+#undef _text_end
+#undef _bss_start
+#undef _bss_end
 #include "elf_patcher.h"
 #include "instant_patches_common.h"
 #include "ios_fs_patches.h"
