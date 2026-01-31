@@ -53,8 +53,22 @@ typedef struct {
 #define bsp_data_phys(addr)       ((u32) (addr) -0xe6042000 + 0x13d02000)
 
 void instant_patches_setup(u32 stroopwafel) {
-    // apply IOS ELF launch hook
-    *(volatile u32 *) 0x0812A120 = ARM_BL(0x0812A120, kernel_launch_ios);
+
+    if (!stroopwafel) {
+        // stroopwafel already hooks the reload and goes trough minute
+        // apply IOS ELF launch hook
+        *(volatile u32 *) 0x0812A120 = ARM_BL(0x0812A120, kernel_launch_ios);
+
+        // patches already applied by stroopwafel
+        // fix 10 minute timeout that crashes MCP after 10 minutes of booting
+        *(volatile u32 *) mcp_text_phys(0x05022474) = 0xFFFFFFFF; // NEW_TIMEOUT
+
+        // Patch FS to syslog everything
+        *(volatile u32 *) fsa_phys(0x107F5720) = ARM_B(0x107F5720, 0x107F0C84);
+
+        // Patch MCP to syslog everything
+        *(volatile u32 *) mcp_text_phys(0x05055438) = ARM_B(0x05055438, 0x0503dcf8);
+    }
 
     *(volatile u32 *) 0x0812CD2C = ARM_B(0x0812CD2C, kernel_syscall_0x81);
 
@@ -124,13 +138,8 @@ void instant_patches_setup(u32 stroopwafel) {
         }
     }
 
-    int (*_iosMapSharedUserExecution)(void *descr) = (void *) 0x08124F88;
-
     // patch kernel dev node registration
     *(volatile u32 *) kernel_phys(0x081430B4) = 1;
-
-    // fix 10 minute timeout that crashes MCP after 10 minutes of booting
-    *(volatile u32 *) mcp_text_phys(0x05022474) = 0xFFFFFFFF; // NEW_TIMEOUT
 
     kernel_memset((void *) mcp_custom_bss_phys(0x050BD000), 0, MCP_CUSTOM_BSS_LENGTH);
 
@@ -216,13 +225,9 @@ void instant_patches_setup(u32 stroopwafel) {
     // force check USB storage on load
     *(volatile u32 *) acp_text_phys(0xE012202C) = 0x00000001; // find USB flag
 
-    // Patch FS to syslog everything
-    *(volatile u32 *) fsa_phys(0x107F5720) = ARM_B(0x107F5720, 0x107F0C84);
-
-    // Patch MCP to syslog everything
-    *(volatile u32 *) mcp_text_phys(0x05055438) = ARM_B(0x05055438, 0x0503dcf8);
-
     if (!stroopwafel) {
+        // Memory was already mapped via stroopwafel
+        int (*_iosMapSharedUserExecution)(void *descr) = (void *) 0x08124F88;
         ios_map_shared_info_t map_info;
         map_info.paddr  = mcp_custom_bss_phys(MCP_CUSTOM_BSS_START);
         map_info.vaddr  = MCP_CUSTOM_BSS_START;
