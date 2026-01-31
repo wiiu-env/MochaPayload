@@ -53,7 +53,5 @@ int main(int argc, char **argv) {
         IOS_Close(mcpFd);
     }
 
-    Stroopwafel_DeInitLibrary();
-
     return 0;
 }
