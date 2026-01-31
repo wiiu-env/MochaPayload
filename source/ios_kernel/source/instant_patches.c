@@ -39,18 +39,18 @@ typedef struct {
     u32 type;
     u32 cached;
 } ios_map_shared_info_t;
-#define ENVIRONMENT_PATH_LENGTH    0x100
+#define ENVIRONMENT_PATH_LENGTH   0x100
 
-#define mcp_text_phys(addr)        ((u32) (addr) -0x05000000 + 0x081C0000)
-#define mcp_rodata_phys(addr)      ((u32) (addr) -0x05060000 + 0x08220000)
-#define mcp_data_phys(addr)        ((u32) (addr) -0x05074000 + 0x08234000)
-#define net_phys(addr)             ((u32) (addr))
-#define fsa_phys(addr)             ((u32) (addr))
-#define kernel_phys(addr)          ((u32) (addr))
-#define acp_text_phys(addr)        ((u32) (addr) -0xE0000000 + 0x12900000)
-#define nimboss_text_phys(addr)    ((u32) (addr) -0xe2000000 + 0x12EC0000)
-#define nimboss_rodata_phys(addr)  ((u32) (addr) -0xe2280000 + 0x13140000)
-#define bsp_data_phys(addr)        ((u32) (addr) -0xe6042000 + 0x13d02000)
+#define mcp_text_phys(addr)       ((u32) (addr) -0x05000000 + 0x081C0000)
+#define mcp_rodata_phys(addr)     ((u32) (addr) -0x05060000 + 0x08220000)
+#define mcp_data_phys(addr)       ((u32) (addr) -0x05074000 + 0x08234000)
+#define net_phys(addr)            ((u32) (addr))
+#define fsa_phys(addr)            ((u32) (addr))
+#define kernel_phys(addr)         ((u32) (addr))
+#define acp_text_phys(addr)       ((u32) (addr) -0xE0000000 + 0x12900000)
+#define nimboss_text_phys(addr)   ((u32) (addr) -0xe2000000 + 0x12EC0000)
+#define nimboss_rodata_phys(addr) ((u32) (addr) -0xe2280000 + 0x13140000)
+#define bsp_data_phys(addr)       ((u32) (addr) -0xe6042000 + 0x13d02000)
 
 void instant_patches_setup(u32 stroopwafel) {
     // apply IOS ELF launch hook
@@ -222,7 +222,7 @@ void instant_patches_setup(u32 stroopwafel) {
     // Patch MCP to syslog everything
     *(volatile u32 *) mcp_text_phys(0x05055438) = ARM_B(0x05055438, 0x0503dcf8);
 
-    if(!stroopwafel) {
+    if (!stroopwafel) {
         ios_map_shared_info_t map_info;
         map_info.paddr  = mcp_custom_bss_phys(MCP_CUSTOM_BSS_START);
         map_info.vaddr  = MCP_CUSTOM_BSS_START;

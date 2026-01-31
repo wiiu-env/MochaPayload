@@ -79,7 +79,7 @@ int _main(u32 stroopwafel) {
     *(volatile uint32_t *) 0x0812c138 = 0xe3a00000; // mov r0, #0
     *(volatile uint32_t *) 0x0812c13c = 0xe12fff1e; // bx lr
 
-    if(!stroopwafel){
+    if (!stroopwafel) {
         void *pset_fault_behavior = (void *) 0x081298BC;
         kernel_memcpy(pset_fault_behavior, (void *) repairData_set_fault_behavior, sizeof(repairData_set_fault_behavior));
 
