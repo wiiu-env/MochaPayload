@@ -153,7 +153,7 @@ void instant_patches_setup(u32 stroopwafel) {
     // patch kernel dev node registration
     *(volatile u32 *) kernel_phys(0x081430B4) = 1;
 
-    kernel_memset((void *) mcp_custom_bss_phys(0x050BD000), 0, MCP_CUSTOM_BSS_LENGTH);
+    kernel_memset((void *) mcp_custom_bss_phys(MCP_CUSTOM_BSS_START), 0, MCP_CUSTOM_BSS_LENGTH);
 
     // allow custom bootLogoTex and bootMovie.h264
     *(volatile u32 *) acp_text_phys(0xE0030D68) = 0xE3A00000; // mov r0, #0

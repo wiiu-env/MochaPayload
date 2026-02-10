@@ -52,7 +52,7 @@ PROVIDE(IOS_FlushDCache = 0x05056a7c);
 PROVIDE(IOS_CreateSemaphore = 0x05056aa4);
 PROVIDE(IOS_WaitSemaphore = 0x05056aac);
 PROVIDE(IOS_SignalSemaphore = 0x05056ab4);
-PROVIDE(IOS_DestroySempahore = 0x05056abc);
+PROVIDE(IOS_DestroySemaphore = 0x05056abc);
 
 PROVIDE(IOS_VirtToPhys = 0x05056a9c);
 

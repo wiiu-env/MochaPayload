@@ -40,7 +40,7 @@ INCLUDES	:= source
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
-CFLAGS	:= -Wall -Wextra -std=gnu11 -Os $(MACHDEP) $(INCLUDE) -fno-builtin
+CFLAGS	:= -Wall -Wextra -Werror -std=gnu11 -Os $(MACHDEP) $(INCLUDE) -fno-builtin
 
 ASFLAGS	:= $(MACHDEP)
 

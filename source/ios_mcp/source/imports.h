@@ -23,6 +23,7 @@ int IOS_ReceiveMessage(int queueid, uint32_t *message, uint32_t flags);
 int IOS_CreateTimer(uint32_t time_us, uint32_t repeat_time_us, int queueid, uint32_t message);
 int IOS_RestartTimer(int timerid, uint32_t time_us, uint32_t repeat_time_us);
 int IOS_DestroyTimer(int timerid);
+int IOS_Shutdown(int reboot);
 
 void IOS_InvalidateDCache(void *ptr, uint32_t len);
 void IOS_FlushDCache(void *ptr, uint32_t len);

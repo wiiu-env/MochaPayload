@@ -51,8 +51,25 @@ void mcp_run_patches(u32 ios_elf_start) {
     section_write_word(ios_elf_start, 0x0501dd78, THUMB_BL(0x0501dd78, MCP_ReadCOSXml_patch));
     section_write_word(ios_elf_start, 0x051105ce, THUMB_BL(0x051105ce, MCP_ReadCOSXml_patch));
 
-    // patch MCP syslogs
-    //section_write_word(ios_elf_start, 0x05055438, ARM_B(0x05055438, 0x0503DCF8));
+    // Keep usb for reboot logging if we already do usb logging
+    if (*((volatile uint32_t *) (0x050290dc - 0x05000000 + 0x081C0000)) == 0x42424242) {
+        // patch TEST debug mode check
+        //section_write_word(ios_elf_start, 0xe4016a78, 0xe3a00000);
+        section_write_word(ios_elf_start, 0xe4007828, 0xe3a00000);
+
+        // patch MCP syslog debug mode check
+        section_write_word(ios_elf_start, 0x050290d8, 0x20004770);
+
+        // Write magic word to disable custom USB logging IPC
+        section_write_word(ios_elf_start, 0x050290dc, 0x42424242);
+    }
+
+    section_write_word(ios_elf_start, 0x05029078, THUMB_BL(0x05029078, Syslog_RouteOutputPatch));
+    // we don't need this patch here as we always show the complete log via USB serial
+    //section_write_word(ios_elf_start, 0x05029040, THUMB_BL(0x05029040, Syslog_FlushHistoryToOutputForUSB));
+
+    // Patch MCP to syslog everything
+    section_write_word(ios_elf_start, 0x05055438, ARM_B(0x05055438, 0x0503dcf8));
     //section_write_word(ios_elf_start, 0x05056C2C, ARM_B(0x05056C2C, 0x0503DCF8));
     //section_write_word(ios_elf_start, 0x0500A4D2, THUMB_BL(0x0500A4D2, mcpThumb2ArmLog));
 }
