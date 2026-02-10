@@ -29,3 +29,23 @@ MCP_ReadCOSXml_patch:
     ldr r12, =_MCP_ReadCOSXml_patch
     bx r12
 
+.extern _Syslog_RouteOutputPatch
+.global Syslog_RouteOutputPatch
+Syslog_RouteOutputPatch:
+    .thumb
+    bx pc
+    nop
+    .arm
+    ldr r12, =_Syslog_RouteOutputPatch
+    bx r12
+
+.extern _Syslog_FlushHistoryToOutputForUSB
+.global Syslog_FlushHistoryToOutputForUSB
+Syslog_FlushHistoryToOutputForUSB:
+    .thumb
+    bx pc
+    nop
+    .arm
+    ldr r12, =_Syslog_FlushHistoryToOutputForUSB
+    bx r12
+

@@ -27,6 +27,8 @@ PROVIDE(IOS_GetThreadPriority = 0x0505683c);
 PROVIDE(IOS_CreateMessageQueue = 0x0505684c);
 PROVIDE(IOS_DestroyMessageQueue = 0x05056854);
 PROVIDE(IOS_ReceiveMessage = 0x0505686c);
+PROVIDE(IOS_SendMessage = 0x0505685c);
+PROVIDE(IOS_JamMessage = 0x05056864);
 
 PROVIDE(IOS_CreateTimer = 0x05056884);
 PROVIDE(IOS_RestartTimer = 0x0505688c);
@@ -64,3 +66,13 @@ PROVIDE(IOS_Syscall0x81 = 0x05056bf4);
 PROVIDE(ppcHeartBeatThreadId = 0x05070458);
 PROVIDE(currentColdbootOS = 0x050b8174);
 PROVIDE(currentColdbootTitle = 0x050b817c);
+
+PROVIDE(gSyslogBuffers = 0x05096ed4);
+PROVIDE(gSyslogBufferFlags = 0x05096f48);
+PROVIDE(gActiveSyslogBuffer = 0x05095ecc);
+
+PROVIDE(Syslog_CircularBuffer_ForceWrite =  0x05055324);
+PROVIDE(Syslog_CircularBuffer_Read =  0x05055284);
+
+PROVIDE(gCurrentColdbootOS = 0x050b8174);
+PROVIDE(gCurrentColdbootTitle = 0x050b817c);

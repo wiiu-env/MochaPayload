@@ -23,7 +23,9 @@
 #include "ipc_types.h"
 #include "logger.h"
 #include "svc.h"
+#include "syslogserver.h"
 #include <inttypes.h>
+
 #include <mocha/commands.h>
 #include <stdio.h>
 #include <string.h>
@@ -562,6 +564,21 @@ int _MCP_ReadCOSXml_patch(uint32_t u1, uint32_t u2, MCPPPrepareTitleInfo *xmlDat
 
 extern int _startMainThread(void);
 
+bool sInitIOPShellDone = false;
+void InitIOPShell() {
+    if (sInitIOPShellDone) return;
+    svcCustomKernelCommand(KERNEL_WRITE32, 0xe4007828, 0xe3a00000);
+
+    usleep(1000 * 10);
+
+    int handle = svcOpen("/dev/testproc1", 0);
+    if (handle > 0) {
+        svcResume(handle);
+        svcClose(handle);
+    }
+    sInitIOPShellDone = true;
+}
+
 /*  RPX replacement! Call this ioctl to replace the next loaded RPX with an arbitrary path.
     DO NOT RETURN 0, this affects the codepaths back in the IOSU code */
 int _MCP_ioctl100_patch(ipcmessage *msg) {
@@ -616,6 +633,16 @@ int _MCP_ioctl100_patch(ipcmessage *msg) {
                 break;
             }
             case IPC_CUSTOM_START_MCP_THREAD: {
+                svcCustomKernelCommand(KERNEL_WRITE32, 0xe4007828, 0xe3a00000);
+
+                usleep(1000 * 10);
+
+                int handle = svcOpen("/dev/testproc1", 0);
+                if (handle > 0) {
+                    svcResume(handle);
+                    svcClose(handle);
+                }
+
                 _startMainThread();
                 return 0;
                 break;
@@ -634,23 +661,17 @@ int _MCP_ioctl100_patch(ipcmessage *msg) {
                     break;
                 }
 
+                InitIOPShell();
+
                 // set the flag to not run this twice.
                 svcCustomKernelCommand(KERNEL_WRITE32, 0x050290dc, 0x42424242);
 
                 // Patch MCP debugmode check for usb syslog
                 svcCustomKernelCommand(KERNEL_WRITE32, 0x050290d8, 0x20004770);
-                // Patch TEST to allow usb syslog
-                svcCustomKernelCommand(KERNEL_WRITE32, 0xe4007828, 0xe3a00000);
 
                 usleep(1000 * 10);
 
-                int handle = svcOpen("/dev/testproc1", 0);
-                if (handle > 0) {
-                    svcResume(handle);
-                    svcClose(handle);
-                }
-
-                handle = svcOpen("/dev/usb_syslog", 0);
+                int handle = svcOpen("/dev/usb_syslog", 0);
                 if (handle > 0) {
                     svcResume(handle);
                     svcClose(handle);
@@ -658,12 +679,28 @@ int _MCP_ioctl100_patch(ipcmessage *msg) {
 
                 bool showCompleteLog = msg->ioctl.buffer_in && msg->ioctl.length_in >= 0x08 && msg->ioctl.buffer_in[1] == 1;
                 if (!showCompleteLog) {
-                    // Kill existing syslogs to avoid long catch up
-                    uint32_t *bufferPtr = (uint32_t *) (*(uint32_t *) 0x05095ecc);
-                    bufferPtr[0]        = 0;
-                    bufferPtr[1]        = 0;
+                    gSkipSyslogCatchUpForUSBOutput = true;
                 }
 
+                break;
+            }
+            case IPC_CUSTOM_START_IOPSHELL_SERVER: {
+                InitIOPShell();
+                break;
+            }
+            case IPC_CUSTOM_START_TCP_LOGGING: {
+                bool useIPFilter  = false;
+                uint32_t ipFilter = 0;
+                if (msg->ioctl.buffer_in && msg->ioctl.length_in >= 0x0C) {
+                    useIPFilter = msg->ioctl.buffer_in[1] == 1;
+                    ipFilter    = msg->ioctl.buffer_in[2];
+                }
+
+                TCPSyslogStartThread(useIPFilter, ipFilter);
+                break;
+            }
+            case IPC_CUSTOM_STOP_TCP_LOGGING: {
+                TCPSyslogEndThread();
                 break;
             }
             case IPC_CUSTOM_GET_MOCHA_API_VERSION: {

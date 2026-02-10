@@ -169,7 +169,7 @@ static void serverListenClients() {
     serverSocket = -1;
 }
 
-static int wupserver_thread() {
+static int wupserver_thread(void *) {
     while (ifmgrnclInit() <= 0) {
         //print(0, 0, "opening /dev/net/ifmgr/ncl...");
         usleep(1000);

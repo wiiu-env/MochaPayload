@@ -174,6 +174,8 @@ void instant_patches_setup(u32 stroopwafel) {
 
     *(volatile u32 *) mcp_text_phys(0x0501dd78) = THUMB_BL(0x0501dd78, MCP_ReadCOSXml_patch);
     *(volatile u32 *) mcp_text_phys(0x051105ce) = THUMB_BL(0x051105ce, MCP_ReadCOSXml_patch);
+    *(volatile u32 *) mcp_text_phys(0x05029078) = THUMB_BL(0x05029078, Syslog_RouteOutputPatch);
+    *(volatile u32 *) mcp_text_phys(0x05029040) = THUMB_BL(0x05029040, Syslog_FlushHistoryToOutputForUSB);
 
     // give us bsp::ee:read permission for PPC
     *(volatile u32 *) bsp_data_phys(0xe6044db0) = 0x000001F0;

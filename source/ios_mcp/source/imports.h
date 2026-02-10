@@ -36,4 +36,7 @@ int IOS_WaitSemaphore(int id, uint32_t tryWait);
 int IOS_SignalSemaphore(int id);
 int IOS_DestroySemaphore(int id);
 
+extern uint64_t gCurrentColdbootOS;
+extern uint64_t gCurrentColdbootTitle;
+
 #endif
