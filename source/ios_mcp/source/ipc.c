@@ -120,7 +120,9 @@ static int ipc_ioctl(ipcmessage *message) {
         }
         case IOCTL_KILL_SERVER: {
             ipcNodeKilled = 1;
+#ifdef WUPSERVER_ENABLED
             wupserver_deinit();
+#endif
             break;
         }
         case IOCTL_MEMCPY: {

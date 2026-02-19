@@ -1,3 +1,4 @@
+#ifdef WUPSERVER_ENABLED
 #include "fsa.h"
 #include "imports.h"
 #include "ipc.h"
@@ -223,3 +224,4 @@ void wupserver_deinit(void) {
     serverKilled = 1;
     shutdown(serverSocket, SHUT_RDWR);
 }
+#endif
