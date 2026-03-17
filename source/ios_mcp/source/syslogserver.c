@@ -8,7 +8,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#define DEBUG_LOGGING
+//#define DEBUG_LOGGING
 
 #define UDP_BEACON_PORT       4445
 #define SHELL_PORT            7965
@@ -124,7 +124,7 @@ static int sTCPSyslogFindServer(struct sockaddr_in *server_addr) {
     int ret      = -1;
     udp_sock     = socket(AF_INET, SOCK_DGRAM, 0);
     if (udp_sock < 0) {
-        DEBUG_FUNCTION_LINE("Failed to create UDP socket\n");
+        // DEBUG_FUNCTION_LINE("Failed to create UDP socket\n");
         goto exit;
     }
     sUDPSyslogSocket = udp_sock;
