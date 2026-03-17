@@ -49,3 +49,18 @@ Syslog_FlushHistoryToOutputForUSB:
     ldr r12, =_Syslog_FlushHistoryToOutputForUSB
     bx r12
 
+
+.extern _MassEffect3LaunchDetected
+.global MassEffect3LaunchDetectedTrampoline
+MassEffect3LaunchDetectedTrampoline:
+    .thumb
+    bx pc
+    nop
+    .arm
+    push {r0-r12, lr}
+    ldr r12, =_MassEffect3LaunchDetected
+    blx r12
+    pop {r0-r12, lr}
+    ldr r2, =0x05086914
+    mov r3, #1
+    bx lr

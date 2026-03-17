@@ -475,6 +475,11 @@ int _MCP_LoadFile_patch(ipcmessage *msg) {
     return res;
 }
 
+void _MassEffect3LaunchDetected() {
+    DEBUG_FUNCTION_LINE("Start of Mass Effects 3 detected. Do NOT keep aroma loaded on iosu reload\n");
+    svcCustomKernelCommand(KERNEL_WRITE32, 0x0812A120, 0xebffffca);
+}
+
 int _MCP_ReadCOSXml_patch(uint32_t u1, uint32_t u2, MCPPPrepareTitleInfo *xmlData) {
     int (*const real_MCP_ReadCOSXml_patch)(uint32_t u1, uint32_t u2, MCPPPrepareTitleInfo * xmlData) = (void *) 0x050024ec + 1; //+1 for thumb
 

@@ -51,6 +51,9 @@ void mcp_run_patches(u32 ios_elf_start) {
     section_write_word(ios_elf_start, 0x0501dd78, THUMB_BL(0x0501dd78, MCP_ReadCOSXml_patch));
     section_write_word(ios_elf_start, 0x051105ce, THUMB_BL(0x051105ce, MCP_ReadCOSXml_patch));
 
+    // make sure to unload aroma when not booting into mass effects 3
+    section_write_word(ios_elf_start, 0x0501dcaa, THUMB_BL(0x0501dcaa, MassEffect3LaunchDetectedTrampoline));
+
     // Keep usb for reboot logging if we already do usb logging
     if (*((volatile uint32_t *) (0x050290dc - 0x05000000 + 0x081C0000)) == 0x42424242) {
         // patch TEST debug mode check

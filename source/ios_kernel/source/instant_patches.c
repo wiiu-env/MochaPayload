@@ -80,6 +80,9 @@ void instant_patches_setup(u32 stroopwafel) {
 
         // Patch MCP to syslog everything
         *(volatile u32 *) mcp_text_phys(0x05055438) = ARM_B(0x05055438, 0x0503dcf8);
+
+        // Patch ACP to syslog everything
+        // *(volatile u32 *) acp_text_phys(0xe00d6de8) = ARM_B(0xe00d6de8, 0xe00c4d54);
     }
 
     *(volatile u32 *) 0x0812CD2C = ARM_B(0x0812CD2C, kernel_syscall_0x81);
@@ -176,6 +179,15 @@ void instant_patches_setup(u32 stroopwafel) {
     *(volatile u32 *) mcp_text_phys(0x051105ce) = THUMB_BL(0x051105ce, MCP_ReadCOSXml_patch);
     *(volatile u32 *) mcp_text_phys(0x05029078) = THUMB_BL(0x05029078, Syslog_RouteOutputPatch);
     *(volatile u32 *) mcp_text_phys(0x05029040) = THUMB_BL(0x05029040, Syslog_FlushHistoryToOutputForUSB);
+
+    // make sure to unload aroma when not booting into mass effects 3
+    // This hook into an hardcoded check for the ME3 titleid when preparing a title. The game will force the console to a fastreload
+    // This fast reload will keep iosu patches but no ppc patches which causes weird issues I don't fully understand. For now we just
+    // remove the "keep aroma loaded" patch in this hook and disable aroma while playing mass effect 3.
+    // Is the future we may want to patch out this hardcoded ME3 check and don't do a reboot
+    // e.g. via *(volatile u32 *) mcp_text_phys(0x0501dcac) = *(volatile u32 *) 0x23006013;
+    // but this makes the game not start some times. maybe thats the reason why it was hardcoded to reboot the console on ME3 launch.
+    *(volatile u32 *) mcp_text_phys(0x0501dcaa) = THUMB_BL(0x0501dcaa, MassEffect3LaunchDetectedTrampoline);
 
     // give us bsp::ee:read permission for PPC
     *(volatile u32 *) bsp_data_phys(0xe6044db0) = 0x000001F0;
