@@ -180,13 +180,20 @@ void instant_patches_setup(u32 stroopwafel) {
     *(volatile u32 *) mcp_text_phys(0x05029078) = THUMB_BL(0x05029078, Syslog_RouteOutputPatch);
     *(volatile u32 *) mcp_text_phys(0x05029040) = THUMB_BL(0x05029040, Syslog_FlushHistoryToOutputForUSB);
 
-    // make sure to unload aroma when not booting into mass effects 3
-    // This hook into an hardcoded check for the ME3 titleid when preparing a title. The game will force the console to a fastreload
-    // This fast reload will keep iosu patches but no ppc patches which causes weird issues I don't fully understand. For now we just
-    // remove the "keep aroma loaded" patch in this hook and disable aroma while playing mass effect 3.
-    // Is the future we may want to patch out this hardcoded ME3 check and don't do a reboot
-    // e.g. via *(volatile u32 *) mcp_text_phys(0x0501dcac) = *(volatile u32 *) 0x23006013;
-    // but this makes the game not start some times. maybe thats the reason why it was hardcoded to reboot the console on ME3 launch.
+    // Effectively unloads Aroma when booting Mass Effect 3.
+    //
+    // Context: This hooks into a hardcoded check for the ME3 Title ID during title preparation.
+    // The game forces the console into a fast reload, which retains IOSU patches but drops
+    // PPC patches. This mismatch leads to undefined behavior and state inconsistencies.
+    // So we unload aroma to have a stable environment.
+    //
+    // Workaround: For now, we remove the "keep Aroma loaded" patch within this hook,
+    // effectively disabling Aroma while Mass Effect 3 is running.
+    //
+    // Future Work: We may eventually want to patch out the hardcoded ME3 check to prevent
+    // the reboot entirely (e.g., *(volatile u32 *) mcp_text_phys(0x0501dcac) = 0x23006013;).
+    // However, doing so currently causes softlocks from boooting the game, which is likely
+    // why the reboot was hardcoded for this specific title in the first place?
     *(volatile u32 *) mcp_text_phys(0x0501dcaa) = THUMB_BL(0x0501dcaa, MassEffect3LaunchDetectedTrampoline);
 
     // give us bsp::ee:read permission for PPC
