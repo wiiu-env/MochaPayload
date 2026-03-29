@@ -312,6 +312,14 @@ static int sTCPSyslogHandleServer() {
 #ifdef DEBUG_LOGGING
     DEBUG_FUNCTION_LINE("Wait for beacon\n");
 #endif
+
+    while (socketInit() <= 0) {
+#ifdef DEBUG_LOGGING
+        DEBUG_FUNCTION_LINE("opening /dev/socket...");
+#endif
+        usleep(1000 * 100);
+    }
+
     // 1. Wait for PC Beacon
     if (sTCPSyslogFindServer(&server_addr) < 0) {
         // Sleep 5 seconds then try again
