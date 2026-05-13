@@ -133,8 +133,8 @@ void instant_patches_setup(u32 stroopwafel) {
         // patch alloc_size to be filesize
         {
             // nop some code we don't want
-            *(volatile u32 *) fsa_phys(0x1078d6e8) = 0xea000000; //mov r0, r0
-            *(volatile u32 *) fsa_phys(0x1078d6ec) = 0xea000000; //mov r0, r0
+            *(volatile u32 *) fsa_phys(0x1078d6e8) = 0xe1a00000; //mov r0, r0
+            *(volatile u32 *) fsa_phys(0x1078d6ec) = 0xe1a00000; //mov r0, r0
 
             // set param_2->allocSize = param_3->size;
             *(volatile u32 *) fsa_phys(0x1078d6f0) = 0xe5db3248; //ldrb r3,[r11,#0x248]
@@ -147,9 +147,9 @@ void instant_patches_setup(u32 stroopwafel) {
             *(volatile u32 *) fsa_phys(0x1078d70c) = 0xe5c93017; //strb r3,[r9,#0x17]
 
             // nop previous alloc_size assign
-            *(volatile u32 *) fsa_phys(0x1078d71c) = 0xea000000; //mov r0, r0
-            *(volatile u32 *) fsa_phys(0x1078d720) = 0xea000000; //mov r0, r0
-            *(volatile u32 *) fsa_phys(0x1078d724) = 0xea000000; //mov r0, r0
+            *(volatile u32 *) fsa_phys(0x1078d71c) = 0xe1a00000; //mov r0, r0
+            *(volatile u32 *) fsa_phys(0x1078d720) = 0xe1a00000; //mov r0, r0
+            *(volatile u32 *) fsa_phys(0x1078d724) = 0xe1a00000; //mov r0, r0
         }
     }
 
@@ -207,9 +207,9 @@ void instant_patches_setup(u32 stroopwafel) {
     *(volatile u32 *) net_phys(0x1239DA7C) = 0;
 
     // Patch DLP to ignore error for missing title archive
-    *(volatile u32 *) net_phys(0x1239E108) = 0xEA000000; // mov r0, r0
-    *(volatile u32 *) net_phys(0x1239E10C) = 0xEA000000; // mov r0, r0
-    *(volatile u32 *) net_phys(0x1239E110) = 0xEA000000; // mov r0, r0
+    *(volatile u32 *) net_phys(0x1239E108) = 0xE1A00000; // mov r0, r0
+    *(volatile u32 *) net_phys(0x1239E10C) = 0xE1A00000; // mov r0, r0
+    *(volatile u32 *) net_phys(0x1239E110) = 0xE1A00000; // mov r0, r0
 
     // Patch DLP path from /vol/content/dlp/app to sd:/dlp/app
     *(volatile u32 *) net_phys(0x12455368)      = 0x2F766F6C; // /vol
