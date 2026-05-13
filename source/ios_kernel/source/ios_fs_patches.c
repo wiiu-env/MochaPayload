@@ -80,8 +80,8 @@ void fs_run_patches(uint32_t ios_elf_start) {
     // patch alloc_size to be filesize
     {
         // nop some code we don't want
-        section_write_word(ios_elf_start, 0x1078d6e8, 0xea000000); // mov r0, r0
-        section_write_word(ios_elf_start, 0x1078d6ec, 0xea000000); // mov r0, r0
+        section_write_word(ios_elf_start, 0x1078d6e8, 0xe1a00000); // mov r0, r0
+        section_write_word(ios_elf_start, 0x1078d6ec, 0xe1a00000); // mov r0, r0
 
         // set param_2->allocSize = param_3->size;
         section_write_word(ios_elf_start, 0x1078d6f0, 0xe5db3248); // ldrb r3,[r11,#0x248]
@@ -94,8 +94,8 @@ void fs_run_patches(uint32_t ios_elf_start) {
         section_write_word(ios_elf_start, 0x1078d70c, 0xe5c93017); // strb r3,[r9,#0x17]
 
         // nop previous alloc_size assign
-        section_write_word(ios_elf_start, 0x1078d71c, 0xea000000); // mov r0, r0
-        section_write_word(ios_elf_start, 0x1078d720, 0xea000000); // mov r0, r0
-        section_write_word(ios_elf_start, 0x1078d724, 0xea000000); // mov r0, r0
+        section_write_word(ios_elf_start, 0x1078d71c, 0xe1a00000); // mov r0, r0
+        section_write_word(ios_elf_start, 0x1078d720, 0xe1a00000); // mov r0, r0
+        section_write_word(ios_elf_start, 0x1078d724, 0xe1a00000); // mov r0, r0
     }
 }

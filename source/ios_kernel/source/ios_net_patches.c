@@ -16,9 +16,9 @@ void net_run_patches(u32 ios_elf_start) {
     section_write_word(ios_elf_start, 0x1239DA7C, 0);
 
     // Patch DLP to ignore error for missing title archive
-    section_write_word(ios_elf_start, 0x1239E108, 0xEA000000); // mov r0, r0
-    section_write_word(ios_elf_start, 0x1239E10C, 0xEA000000); // mov r0, r0
-    section_write_word(ios_elf_start, 0x1239E110, 0xEA000000); // mov r0, r0
+    section_write_word(ios_elf_start, 0x1239E108, 0xE1A00000); // mov r0, r0
+    section_write_word(ios_elf_start, 0x1239E10C, 0xE1A00000); // mov r0, r0
+    section_write_word(ios_elf_start, 0x1239E110, 0xE1A00000); // mov r0, r0
 
     // Patch DLP path from /vol/content/dlp/app to sd:/dlp/app
     section_write_word(ios_elf_start, 0x12455368, 0x2F766F6C);      // /vol
